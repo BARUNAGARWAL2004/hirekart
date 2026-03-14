@@ -560,6 +560,7 @@ const fetchData = async () => {
   const postJob = async (form) => {
     const job = {
       owner_id: currentUser.id,
+      title: form.title,
       shop_name: currentUser.shopName,
       shop_type: currentUser.shopType,
       location: currentUser.location,
