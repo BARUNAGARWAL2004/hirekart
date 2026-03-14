@@ -662,17 +662,9 @@ function useStore() {
       .map(a => ({ ...a, worker: data.users.find(u => u.id === a.worker_id) }));
 
   const getAppliedJobs = () =>
-    data.application
+    data.applications
       .filter(a => a.worker_id === currentUser?.id)
       .map(a => ({ ...a, job: data.jobs.find(j => j.id === a.job_id) }));
-
-  const getAppliedJobs = () =>
-    data.applications
-      .filter(a => a.workerId === currentUser?.id)
-      .map(a => ({
-        ...a,
-        job: data.jobs.find(j => j.id === a.jobId)
-      }));
 
   return {
     data,
@@ -1271,7 +1263,7 @@ function JobDetailPage({ store }) {
 
   useEffect(() => {
     if (currentUser?.role === "worker") {
-      if (data.applications.find(a => a.jobId === jobId && a.workerId === currentUser.id)) setApplied(true);
+      if (data.applications.find(a => a.job_id === jobId && a.worker_id === currentUser.id)) setApplied(true);
     }
   }, [currentUser, data.applications, jobId]);
 
@@ -1345,7 +1337,7 @@ function JobDetailPage({ store }) {
           <div className="card">
             <div className="card-title">{t("applicantsSection")} ({applicants.length})</div>
             {applicants.length === 0 ? <Empty icon="👥" text={t("noApplicants")} /> : applicants.map(a => (
-              <div key={a.id} className="worker-card" style={{ cursor: "pointer" }} onClick={() => navigate("worker-profile", { workerId: a.workerId })}>
+              <div key={a.id} className="worker-card" style={{ cursor: "pointer" }} onClick={() => navigate("worker-profile", { workerId: a.worker_id })}>
                 <div className="row">
                   <Avatar name={a.worker?.name} />
                   <div className="flex-1"><div className="font-bold">{a.worker?.name}</div><div className="text-sm text-gray">📍 {a.worker?.location} · {a.appliedDate}</div></div>
@@ -1618,7 +1610,7 @@ function ApplicantsPage({ store }) {
             <div className="row mb-1">
               <Avatar name={a.worker?.name} />
               <div className="flex-1">
-                <div className="font-bold text-navy" style={{ cursor: "pointer" }} onClick={() => navigate("worker-profile", { workerId: a.workerId })}>{a.worker?.name} →</div>
+                <div className="font-bold text-navy" style={{ cursor: "pointer" }} onClick={() => navigate("worker-profile", { workerId: a.worker_id })}>{a.worker?.name} →</div>
                 <div className="text-sm text-gray">📍 {a.worker?.location} · {t("applied")} {a.appliedDate}</div>
               </div>
               <Badge label={a.status} type={a.status === "pending" ? "gray" : a.status === "shortlisted" ? "green" : "red"} />
