@@ -559,13 +559,16 @@ const fetchData = async () => {
 
   const postJob = async (form) => {
     const job = {
-      ownerId: currentUser.id,
-      shopName: currentUser.shopName,
-      shopType: currentUser.shopType,
+      owner_id: currentUser.id,
+      shop_name: currentUser.shopName,
+      shop_type: currentUser.shopType,
       location: currentUser.location,
-      posted_date: new Date().toISOString().slice(0, 10),
-      active: true,
-      ...form
+      posted_date: new Date().toISOString().slice(0,10),
+      min_salary: form.minSalary,
+      max_salary: form.maxSalary,
+      experience: form.experience,
+      description: form.description,
+      active: true
     };
 
   const { data, error } = await supabase
