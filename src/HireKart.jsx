@@ -563,7 +563,7 @@ const fetchData = async () => {
   // ─────────────────────────────
 
   const postJob = async (form) => {
-    console.log("FORM DATA:", form)
+
     const job = {
       owner_id: currentUser.id,
       title: form.title,
@@ -571,26 +571,24 @@ const fetchData = async () => {
       shop_type: currentUser.shopType,
       location: currentUser.location,
       posted_date: new Date().toISOString().slice(0,10),
-      min_salary: form.minSalary,
-      max_salary: form.maxSalary,
-      experience: form.experience,
+      min_salary: Number(form.minSalary),
+      max_salary: Number(form.maxSalary),
+      experience: Number(form.experience || 0),
       description: form.description,
       active: true
-    };
-
-  const { data, error } = await supabase
-      .from("jobs")
-      .insert([job])
-      .select();
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    await fetchData();
   };
 
+  const { error } = await supabase
+    .from("jobs")
+    .insert([job]);
+
+  if (error) {
+    console.error("Insert error:", error);
+    return;
+  }
+
+  await fetchData();
+};
   // ─────────────────────────────
   // Delete Job
   // ─────────────────────────────
