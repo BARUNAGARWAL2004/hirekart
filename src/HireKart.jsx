@@ -563,6 +563,7 @@ const fetchData = async () => {
   // ─────────────────────────────
 
   const postJob = async (form) => {
+    console.log("FORM DATA:", form)
     const job = {
       owner_id: currentUser.id,
       title: form.title,
