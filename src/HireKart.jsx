@@ -662,7 +662,7 @@ function useStore() {
       .map(a => ({ ...a, worker: data.users.find(u => u.id === a.worker_id) }));
 
   const getAppliedJobs = () =>
-    data.applications
+    data.application
       .filter(a => a.worker_id === currentUser?.id)
       .map(a => ({ ...a, job: data.jobs.find(j => j.id === a.job_id) }));
 
