@@ -480,16 +480,21 @@ const fetchData = async () => {
     return;
   }
 
+  const jobs = (jobsRes.data || []).map(j => ({
+    ...j,
+    ownerId: j.owner_id,
+    shopName: j.shop_name,
+    shopType: j.shop_type,
+    minSalary: j.min_salary,
+    maxSalary: j.max_salary
+  }));
+
   setData({
     users: usersRes.data || [],
-    jobs: jobsRes.data || [],
+    jobs: jobs,
     applications: appsRes.data || []
   });
 };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   // ─────────────────────────────
   // Auth
