@@ -467,34 +467,39 @@ function useStore() {
   // Fetch Data
   // ─────────────────────────────
 
-const fetchData = async () => {
+  const fetchData = async () => {
+    const [usersRes, jobsRes, appsRes] = await Promise.all([
+      supabase.from("users").select("*"),
+      supabase.from("jobs").select("*").order("posted_date", { ascending: false }),
+      supabase.from("applications").select("*")
+    ]);
 
-  const [usersRes, jobsRes, appsRes] = await Promise.all([
-    supabase.from("users").select("*"),
-    supabase.from("jobs").select("*").order("posted_date", { ascending: false }),
-    supabase.from("applications").select("*")
-  ]);
+    if (usersRes.error || jobsRes.error || appsRes.error) {
+      console.error("Supabase Error:", usersRes.error || jobsRes.error || appsRes.error);
+      return;
+    }
 
-  if (usersRes.error || jobsRes.error || appsRes.error) {
-    console.error("Supabase Error:", usersRes.error || jobsRes.error || appsRes.error);
-    return;
-  }
+    // ✅ Map users snake_case → camelCase
+    const users = (usersRes.data || []).map(u => ({
+      ...u,
+      shopName: u.shop_name,
+      shopType: u.shop_type,
+      expectedSalary: u.expected_salary,
+      willingToRelocate: u.willing_to_relocate,
+    }));
 
-  const jobs = (jobsRes.data || []).map(j => ({
-    ...j,
-    ownerId: j.owner_id,
-    shopName: j.shop_name,
-    shopType: j.shop_type,
-    minSalary: j.min_salary,
-    maxSalary: j.max_salary
-  }));
+    const jobs = (jobsRes.data || []).map(j => ({
+      ...j,
+      ownerId: j.owner_id,
+      shopName: j.shop_name,
+      shopType: j.shop_type,
+      minSalary: j.min_salary,
+      maxSalary: j.max_salary,
+    }));
 
-  setData({
-    users: usersRes.data || [],
-    jobs: jobs,
-    applications: appsRes.data || []
-  });
-};
+    // ✅ Also re-sync currentUser if already logged in
+    setData({ users, jobs, applications: appsRes.data || [] });
+  };
 
   // ─────────────────────────────
   // Auth
@@ -502,10 +507,7 @@ const fetchData = async () => {
 
   const login = (email, password) => {
     const u = data.users.find(u => u.email === email && u.password === password);
-    if (u) {
-      setCurrentUser(u);
-      return u;
-    }
+    if (u) { setCurrentUser(u); return u; }
     return null;
   };
 
@@ -570,25 +572,25 @@ const fetchData = async () => {
       shop_name: currentUser.shopName,
       shop_type: currentUser.shopType,
       location: currentUser.location,
-      posted_date: new Date().toISOString().slice(0,10),
+      posted_date: new Date().toISOString().slice(0, 10),
       min_salary: Number(form.minSalary),
       max_salary: Number(form.maxSalary),
       experience: Number(form.experience || 0),
       description: form.description,
       active: true
+    };
+
+    const { error } = await supabase
+      .from("jobs")
+      .insert([job]);
+
+    if (error) {
+      console.error("Insert error:", error);
+      return;
+    }
+
+    await fetchData();
   };
-
-  const { error } = await supabase
-    .from("jobs")
-    .insert([job]);
-
-  if (error) {
-    console.error("Insert error:", error);
-    return;
-  }
-
-  await fetchData();
-};
   // ─────────────────────────────
   // Delete Job
   // ─────────────────────────────
@@ -612,30 +614,19 @@ const fetchData = async () => {
   // ─────────────────────────────
 
   const applyJob = async (jobId) => {
-
-  if (!currentUser) return false;
-
-    if (data.applications.find(a => a.jobId === jobId && a.workerId === currentUser.id))
-      return false;
+    if (!currentUser) return false;
+    if (data.applications.find(a => a.job_id === jobId && a.worker_id === currentUser.id)) return false;
 
     const application = {
-      jobId,
-      workerId: currentUser.id,
+      job_id: jobId,          // ✅ snake_case
+      worker_id: currentUser.id,  // ✅ snake_case
       status: "pending",
-      appliedDate: new Date().toISOString().slice(0, 10)
+      applied_date: new Date().toISOString().slice(0, 10)  // ✅ snake_case
     };
 
-    const { error } = await supabase
-      .from("applications")
-      .insert([application]);
-
-    if (error) {
-      console.error(error);
-      return false;
-    }
-
+    const { error } = await supabase.from("applications").insert([application]);
+    if (error) { console.error(error); return false; }
     await fetchData();
-
     return true;
   };
 
@@ -667,11 +658,13 @@ const fetchData = async () => {
 
   const getApplicantsForJob = (jobId) =>
     data.applications
-      .filter(a => a.jobId === jobId)
-      .map(a => ({
-        ...a,
-        worker: data.users.find(u => u.id === a.workerId)
-      }));
+      .filter(a => a.job_id === jobId)
+      .map(a => ({ ...a, worker: data.users.find(u => u.id === a.worker_id) }));
+
+  const getAppliedJobs = () =>
+    data.applications
+      .filter(a => a.worker_id === currentUser?.id)
+      .map(a => ({ ...a, job: data.jobs.find(j => j.id === a.job_id) }));
 
   const getAppliedJobs = () =>
     data.applications
@@ -1081,17 +1074,17 @@ function WorkerSignup({ store }) {
   };
 
   const handleSubmit = async () => {
-  const e = validate();
-  if (Object.keys(e).length > 0) { setErrors(e); return; }
+    const e = validate();
+    if (Object.keys(e).length > 0) { setErrors(e); return; }
 
-  const skills = form.skills.includes("Others") && form.customSkill
-    ? [...form.skills.filter(s => s !== "Others"), form.customSkill]
-    : form.skills;
+    const skills = form.skills.includes("Others") && form.customSkill
+      ? [...form.skills.filter(s => s !== "Others"), form.customSkill]
+      : form.skills;
 
-  await registerWorker({ ...form, skills });
+    await registerWorker({ ...form, skills });
 
-  navigate("worker-dashboard");
-};
+    navigate("worker-dashboard");
+  };
 
   return (
     <>
@@ -1286,27 +1279,27 @@ function JobDetailPage({ store }) {
   const owner = data.users.find(u => u.id === job.ownerId);
   const applicants = getApplicantsForJob(jobId);
 
-const handleApply = async () => {
+  const handleApply = async () => {
 
-  if (!currentUser) { 
-    navigate("worker-signup"); 
-    return; 
-  }
+    if (!currentUser) {
+      navigate("worker-signup");
+      return;
+    }
 
-  if (currentUser.role !== "worker") { 
-    setMsg(t("onlyWorkers")); 
-    return; 
-  }
+    if (currentUser.role !== "worker") {
+      setMsg(t("onlyWorkers"));
+      return;
+    }
 
-  const ok = await applyJob(jobId);
+    const ok = await applyJob(jobId);
 
-  if (ok) {
-    setApplied(true);
-    setMsg(t("applySuccess"));
-  } else {
-    setMsg(t("alreadyAppliedMsg"));
-  }
-};
+    if (ok) {
+      setApplied(true);
+      setMsg(t("applySuccess"));
+    } else {
+      setMsg(t("alreadyAppliedMsg"));
+    }
+  };
 
   return (
     <>
@@ -1564,10 +1557,10 @@ function PostJobPage({ store }) {
     return e;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const e = validate();
     if (Object.keys(e).length > 0) { setErrors(e); return; }
-    postJob({ ...form, minSalary: parseInt(form.minSalary), maxSalary: parseInt(form.maxSalary), experience: parseInt(form.experience) || 0 });
+    await postJob({ ...form, minSalary: parseInt(form.minSalary), maxSalary: parseInt(form.maxSalary), experience: parseInt(form.experience) || 0 });
     setDone(true);
   };
 
@@ -1741,7 +1734,7 @@ function AdminPanel({ store }) {
                     <button className="btn btn-sm btn-red" onClick={() => setConfirmJobId(job.id)}>{t("deleteJob")}</button>
                   </div>
                   <div className="job-meta mt-1">
-                    <Badge label={`₹${(job.minSalary||0).toLocaleString()} – ₹${(job.maxSalary||0).toLocaleString()}`} type="saffron" />
+                    <Badge label={`₹${(job.minSalary || 0).toLocaleString()} – ₹${(job.maxSalary || 0).toLocaleString()}`} type="saffron" />
                     <Badge label={`Posted: ${job.posted_date}`} type="gray" />
                     <Badge label={`Owner: ${owner?.name || "?"}`} type="sky" />
                   </div>
