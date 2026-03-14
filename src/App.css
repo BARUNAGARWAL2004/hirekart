@@ -182,3 +182,22 @@
     border-right-color: var(--border);
   }
 }
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+@media (max-width: 480px) {
+  .nav {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .nav button,
+  .nav a {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
