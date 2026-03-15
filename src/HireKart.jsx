@@ -1700,15 +1700,15 @@ function PostJobPage({ store }) {
     customLocation: "",
     startTime: "",
     endTime: "",
-    genderPreference: "Both can apply"
-  });
+    genderPreference: "Both can apply",
+  
   // ✅ New fields
   candidatesRequired: "1",
-    jobLocation: "",
-      customLocation: "",
-        startTime: "",
-          endTime: "",
-            genderPreference: "Both can apply",
+  jobLocation: "",
+  customLocation: "",
+  startTime: "",
+  endTime: "",
+  genderPreference: "Both can apply",
   });
 
 const [errors, setErrors] = useState({});
