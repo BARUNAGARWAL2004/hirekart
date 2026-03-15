@@ -1113,7 +1113,7 @@ function LoginPage({ store }) {
           value={password}
           onChange={e => setPassword(e.target.value)}
         />
-        
+
         <button
           className="btn btn-saffron btn-full"
           onClick={handleLogin}
@@ -1218,6 +1218,8 @@ function WorkerSignup({ store }) {
           <Input label={t("aboutYourself")} as="textarea" placeholder={t("aboutPlaceholder")} value={form.about} onChange={e => set("about", e.target.value)} />
         </div>
 
+        {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
+        
         <button className="btn btn-saffron btn-full" onClick={handleSubmit}>{t("createProfile")}</button>
         <div style={{ textAlign: "center", marginTop: "0.75rem", fontSize: "0.83rem", color: "var(--gray-500)" }}>
           {t("alreadyHaveAccount")} <span style={{ color: "var(--saffron)", fontWeight: 700, cursor: "pointer" }} onClick={() => navigate("login")}>{t("loginHere")}</span>
