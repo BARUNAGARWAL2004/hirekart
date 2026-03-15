@@ -1695,214 +1695,279 @@ function PostJobPage({ store }) {
     maxSalary: "",
     experience: "",
     description: "",
-    // ✅ New fields
     candidatesRequired: "1",
     jobLocation: "",
     customLocation: "",
     startTime: "",
     endTime: "",
-    genderPreference: "Both can apply",
+    genderPreference: "Both can apply"
+  });
+  // ✅ New fields
+  candidatesRequired: "1",
+    jobLocation: "",
+      customLocation: "",
+        startTime: "",
+          endTime: "",
+            genderPreference: "Both can apply",
   });
 
-  const [errors, setErrors] = useState({});
-  const [done, setDone] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+const [errors, setErrors] = useState({});
+const [done, setDone] = useState(false);
+const [submitting, setSubmitting] = useState(false);
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const validate = () => {
-    const e = {};
-    if (!form.title) e.title = t("fillRequired");
-    if (!form.minSalary || isNaN(form.minSalary)) e.minSalary = t("fillRequired");
-    if (!form.maxSalary || isNaN(form.maxSalary)) e.maxSalary = t("fillRequired");
-    if (parseInt(form.minSalary) > parseInt(form.maxSalary)) e.salary = t("salaryError");
-    if (!form.description) e.description = t("fillRequired");
-    if (!form.jobLocation) e.jobLocation = t("fillRequired");
-    if (form.jobLocation === "Others" && !form.customLocation) e.customLocation = t("fillRequired");
-    if (!form.candidatesRequired || Number(form.candidatesRequired) < 1) e.candidatesRequired = "Please enter a valid number.";
-    return e;
-  };
+const validate = () => {
+  const e = {};
+  if (!form.title) e.title = t("fillRequired");
+  if (!form.minSalary || isNaN(form.minSalary)) e.minSalary = t("fillRequired");
+  if (!form.maxSalary || isNaN(form.maxSalary)) e.maxSalary = t("fillRequired");
+  if (parseInt(form.minSalary) > parseInt(form.maxSalary)) e.salary = t("salaryError");
+  if (!form.description) e.description = t("fillRequired");
+  if (!form.jobLocation) e.jobLocation = t("fillRequired");
+  if (form.jobLocation === "Others" && !form.customLocation) e.customLocation = t("fillRequired");
+  if (!form.candidatesRequired || Number(form.candidatesRequired) < 1) e.candidatesRequired = "Please enter a valid number.";
+  return e;
+};
 
-  const handleSubmit = async () => {
-    const e = validate();
-    if (Object.keys(e).length > 0) { setErrors(e); return; }
-    setSubmitting(true);
-    const result = await postJob({
-      ...form,
-      minSalary: parseInt(form.minSalary),
-      maxSalary: parseInt(form.maxSalary),
-      experience: parseInt(form.experience) || 0,
-    });
-    setSubmitting(false);
-    if (result?.error) {
-      setErrors({ submit: "Failed to post job. Please try again." });
-      return;
-    }
-    setDone(true);
-  };
+const handleSubmit = async () => {
+  const e = validate();
+  if (Object.keys(e).length > 0) { setErrors(e); return; }
+  setSubmitting(true);
+  const result = await postJob({
+    ...form,
+    minSalary: parseInt(form.minSalary),
+    maxSalary: parseInt(form.maxSalary),
+    experience: parseInt(form.experience) || 0,
+  });
+  setSubmitting(false);
+  if (result?.error) {
+    setErrors({ submit: "Failed to post job. Please try again." });
+    return;
+  }
+  setDone(true);
+};
 
-  if (done) return (
-    <div className="section" style={{ textAlign: "center", paddingTop: "3rem" }}>
-      <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🎉</div>
-      <h2 style={{ fontFamily: "'Baloo 2', cursive", color: "var(--navy)", marginBottom: "0.5rem" }}>{t("jobPostedTitle")}</h2>
-      <p style={{ color: "var(--gray-500)", marginBottom: "1.5rem" }}>{t("jobPostedDesc")}</p>
-      <button className="btn btn-green" onClick={() => navigate("owner-dashboard")}>{t("goToDashboard")}</button>
+if (done) return (
+  <div className="section" style={{ textAlign: "center", paddingTop: "3rem" }}>
+    <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🎉</div>
+    <h2 style={{ fontFamily: "'Baloo 2', cursive", color: "var(--navy)", marginBottom: "0.5rem" }}>{t("jobPostedTitle")}</h2>
+    <p style={{ color: "var(--gray-500)", marginBottom: "1.5rem" }}>{t("jobPostedDesc")}</p>
+    <button className="btn btn-green" onClick={() => navigate("owner-dashboard")}>{t("goToDashboard")}</button>
+  </div>
+);
+
+return (
+  <>
+    <div className="page-header page-header-green">
+      <h2>{t("postJobTitle")}</h2>
+      <p>{t("postJobSub")}</p>
     </div>
-  );
+    <div className="section">
+      {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
 
-  return (
-    <>
-      <div className="page-header page-header-green">
-        <h2>{t("postJobTitle")}</h2>
-        <p>{t("postJobSub")}</p>
-      </div>
-      <div className="section">
-        {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
+      {/* ── Basic Job Details ── */}
+      <div className="card">
+        <div className="card-title">{t("jobDetailsSection")}</div>
 
-        {/* ── Basic Job Details ── */}
-        <div className="card">
-          <div className="card-title">{t("jobDetailsSection")}</div>
+        <Input
+          label={t("jobTitle")}
+          placeholder={t("jobTitlePlaceholder")}
+          value={form.title}
+          onChange={e => set("title", e.target.value)}
+          error={errors.title}
+        />
 
+        <div className="form-row">
           <Input
-            label={t("jobTitle")}
-            placeholder={t("jobTitlePlaceholder")}
-            value={form.title}
-            onChange={e => set("title", e.target.value)}
-            error={errors.title}
+            label={t("minSalary")}
+            type="number"
+            placeholder={t("minSalaryPlaceholder")}
+            value={form.minSalary}
+            onChange={e => set("minSalary", e.target.value)}
+            error={errors.minSalary}
           />
-
-          <div className="form-row">
-            <Input
-              label={t("minSalary")}
-              type="number"
-              placeholder={t("minSalaryPlaceholder")}
-              value={form.minSalary}
-              onChange={e => set("minSalary", e.target.value)}
-              error={errors.minSalary}
-            />
-            <Input
-              label={t("maxSalary")}
-              type="number"
-              placeholder={t("maxSalaryPlaceholder")}
-              value={form.maxSalary}
-              onChange={e => set("maxSalary", e.target.value)}
-              error={errors.maxSalary}
-            />
-          </div>
-          {errors.salary && <div className="form-error mb-1">{errors.salary}</div>}
-
-          <div className="form-row">
-            <Input
-              label={t("expRequired")}
-              type="number"
-              placeholder={t("expRequiredPlaceholder")}
-              value={form.experience}
-              onChange={e => set("experience", e.target.value)}
-              hint={t("expRequiredHint")}
-            />
-            {/* ✅ Candidates Required */}
-            <Input
-              label="Candidates Required *"
-              type="number"
-              placeholder="e.g. 2"
-              value={form.candidatesRequired}
-              onChange={e => set("candidatesRequired", e.target.value)}
-              error={errors.candidatesRequired}
-              hint="How many people do you want to hire?"
-            />
-          </div>
-
           <Input
-            label={t("jobDescLabel")}
-            as="textarea"
-            placeholder={t("jobDescPlaceholder")}
-            value={form.description}
-            onChange={e => set("description", e.target.value)}
-            error={errors.description}
+            label={t("maxSalary")}
+            type="number"
+            placeholder={t("maxSalaryPlaceholder")}
+            value={form.maxSalary}
+            onChange={e => set("maxSalary", e.target.value)}
+            error={errors.maxSalary}
+          />
+        </div>
+        {errors.salary && <div className="form-error mb-1">{errors.salary}</div>}
+
+        <div className="form-row">
+          <Input
+            label={t("expRequired")}
+            type="number"
+            placeholder={t("expRequiredPlaceholder")}
+            value={form.experience}
+            onChange={e => set("experience", e.target.value)}
+            hint={t("expRequiredHint")}
+          />
+          {/* ✅ Candidates Required */}
+          <Input
+            label="Candidates Required *"
+            type="number"
+            placeholder="e.g. 2"
+            value={form.candidatesRequired}
+            onChange={e => set("candidatesRequired", e.target.value)}
+            error={errors.candidatesRequired}
+            hint="How many people do you want to hire?"
           />
         </div>
 
-        {/* ── Location & Schedule ── */}
-        <div className="card">
-          <div className="card-title">📍 Location & Schedule</div>
+        <Input
+          label={t("jobDescLabel")}
+          as="textarea"
+          placeholder={t("jobDescPlaceholder")}
+          value={form.description}
+          onChange={e => set("description", e.target.value)}
+          error={errors.description}
+        />
 
-          {/* ✅ Job Location Dropdown */}
+        {/* Job Location */}
+        <div className="form-group">
+          <label className="form-label">Job Location</label>
+          <select
+            className="form-input"
+            value={form.jobLocation}
+            onChange={e => set("jobLocation", e.target.value)}
+          >
+            <option value="">Select Location</option>
+            <option value="Angul">Angul</option>
+            <option value="Talcher">Talcher</option>
+            <option value="Dhenkanal">Dhenkanal</option>
+            <option value="Athmalik">Athmalik</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+
+        {/* Custom location if Others */}
+        {form.jobLocation === "Others" && (
+          <Input
+            label="Enter Location"
+            placeholder="Type location"
+            value={form.customLocation}
+            onChange={e => set("customLocation", e.target.value)}
+          />
+        )}
+
+        {/* Job Timing */}
+        <div className="form-row">
+          <Input
+            label="Start Time"
+            type="time"
+            value={form.startTime}
+            onChange={e => set("startTime", e.target.value)}
+          />
+
+          <Input
+            label="End Time"
+            type="time"
+            value={form.endTime}
+            onChange={e => set("endTime", e.target.value)}
+          />
+        </div>
+
+        {/* Gender */}
+        <div className="form-group">
+          <label className="form-label">Who can apply?</label>
+          <select
+            className="form-input"
+            value={form.genderPreference}
+            onChange={e => set("genderPreference", e.target.value)}
+          >
+            <option value="Both can apply">Both can apply</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+      </div>
+
+      {/* ── Location & Schedule ── */}
+      <div className="card">
+        <div className="card-title">📍 Location & Schedule</div>
+
+        {/* ✅ Job Location Dropdown */}
+        <div className="form-group">
+          <label className="form-label">Job Location *</label>
+          <select
+            className={`form-input${errors.jobLocation ? " error" : ""}`}
+            value={form.jobLocation}
+            onChange={e => set("jobLocation", e.target.value)}
+          >
+            <option value="">-- Select City --</option>
+            {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+          {errors.jobLocation && <div className="form-error">{errors.jobLocation}</div>}
+        </div>
+
+        {/* ✅ Custom Location — shown only when "Others" is selected */}
+        {form.jobLocation === "Others" && (
+          <Input
+            label="Enter City Name *"
+            placeholder="Type the city or area name"
+            value={form.customLocation}
+            onChange={e => set("customLocation", e.target.value)}
+            error={errors.customLocation}
+          />
+        )}
+
+        {/* ✅ Job Timings */}
+        <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Job Location *</label>
-            <select
-              className={`form-input${errors.jobLocation ? " error" : ""}`}
-              value={form.jobLocation}
-              onChange={e => set("jobLocation", e.target.value)}
-            >
-              <option value="">-- Select City --</option>
-              {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
-            </select>
-            {errors.jobLocation && <div className="form-error">{errors.jobLocation}</div>}
-          </div>
-
-          {/* ✅ Custom Location — shown only when "Others" is selected */}
-          {form.jobLocation === "Others" && (
-            <Input
-              label="Enter City Name *"
-              placeholder="Type the city or area name"
-              value={form.customLocation}
-              onChange={e => set("customLocation", e.target.value)}
-              error={errors.customLocation}
-            />
-          )}
-
-          {/* ✅ Job Timings */}
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Start Time</label>
-              <input
-                className="form-input"
-                type="time"
-                value={form.startTime}
-                onChange={e => set("startTime", e.target.value)}
-              />
-              <div className="form-hint">Work starts at what time?</div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">End Time</label>
-              <input
-                className="form-input"
-                type="time"
-                value={form.endTime}
-                onChange={e => set("endTime", e.target.value)}
-              />
-              <div className="form-hint">Work ends at what time?</div>
-            </div>
-          </div>
-
-          {/* ✅ Gender Preference */}
-          <div className="form-group">
-            <label className="form-label">Gender Preference</label>
-            <select
+            <label className="form-label">Start Time</label>
+            <input
               className="form-input"
-              value={form.genderPreference}
-              onChange={e => set("genderPreference", e.target.value)}
-            >
-              {GENDER_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-            <div className="form-hint">Who can apply for this job?</div>
+              type="time"
+              value={form.startTime}
+              onChange={e => set("startTime", e.target.value)}
+            />
+            <div className="form-hint">Work starts at what time?</div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">End Time</label>
+            <input
+              className="form-input"
+              type="time"
+              value={form.endTime}
+              onChange={e => set("endTime", e.target.value)}
+            />
+            <div className="form-hint">Work ends at what time?</div>
           </div>
         </div>
 
-        <div className="alert alert-info">
-          {t("locationNote")} <strong>{currentUser?.shopName}, {currentUser?.location}</strong>
+        {/* ✅ Gender Preference */}
+        <div className="form-group">
+          <label className="form-label">Gender Preference</label>
+          <select
+            className="form-input"
+            value={form.genderPreference}
+            onChange={e => set("genderPreference", e.target.value)}
+          >
+            {GENDER_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
+          </select>
+          <div className="form-hint">Who can apply for this job?</div>
         </div>
-
-        <button
-          className="btn btn-saffron btn-full"
-          onClick={handleSubmit}
-          disabled={submitting}
-        >
-          {submitting ? "Posting..." : t("postJobBtn")}
-        </button>
       </div>
-    </>
-  );
+
+      <div className="alert alert-info">
+        {t("locationNote")} <strong>{currentUser?.shopName}, {currentUser?.location}</strong>
+      </div>
+
+      <button
+        className="btn btn-saffron btn-full"
+        onClick={handleSubmit}
+        disabled={submitting}
+      >
+        {submitting ? "Posting..." : t("postJobBtn")}
+      </button>
+    </div>
+  </>
+);
 }
 
 function ApplicantsPage({ store }) {
