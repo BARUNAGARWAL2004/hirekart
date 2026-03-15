@@ -456,7 +456,6 @@ function useStore() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
-  const [currentUser, setCurrentUser] = useState(null);
   const [page, setPage] = useState("home");
   const [pageParams, setPageParams] = useState({});
 
