@@ -510,6 +510,12 @@ function useStore() {
       shopType: j.shop_type,
       minSalary: j.min_salary,
       maxSalary: j.max_salary,
+      // ✅ Add these new fields
+      candidatesRequired: j.candidates_required,
+      jobLocation: j.job_location || j.location,
+      startTime: j.start_time,
+      endTime: j.end_time,
+      genderPreference: j.gender_preference,
     }));
 
     setData({ users, jobs, applications: appsRes.data || [] });
@@ -602,7 +608,6 @@ function useStore() {
   // ─────────────────────────────
 
   const postJob = async (form) => {
-
     const job = {
       owner_id: currentUser.id,
       title: form.title,
@@ -614,19 +619,24 @@ function useStore() {
       max_salary: Number(form.maxSalary),
       experience: Number(form.experience || 0),
       description: form.description,
-      active: true
+      active: true,
+      // ✅ New fields
+      candidates_required: Number(form.candidatesRequired || 1),
+      job_location: form.jobLocation === "Others" ? form.customLocation : form.jobLocation,
+      start_time: form.startTime || null,
+      end_time: form.endTime || null,
+      gender_preference: form.genderPreference || "Both can apply",
     };
 
-    const { error } = await supabase
-      .from("jobs")
-      .insert([job]);
+    const { error } = await supabase.from("jobs").insert([job]);
 
     if (error) {
       console.error("Insert error:", error);
-      return;
+      return { error };
     }
 
     await fetchData();
+    return { success: true };
   };
   // ─────────────────────────────
   // Delete Job
@@ -1219,7 +1229,7 @@ function WorkerSignup({ store }) {
         </div>
 
         {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
-        
+
         <button className="btn btn-saffron btn-full" onClick={handleSubmit}>{t("createProfile")}</button>
         <div style={{ textAlign: "center", marginTop: "0.75rem", fontSize: "0.83rem", color: "var(--gray-500)" }}>
           {t("alreadyHaveAccount")} <span style={{ color: "var(--saffron)", fontWeight: 700, cursor: "pointer" }} onClick={() => navigate("login")}>{t("loginHere")}</span>
@@ -1334,11 +1344,14 @@ function JobsPage({ store }) {
             <div className="job-card-header">
               <div><div className="job-title">{job.title}</div><div className="job-shop">🏪 {job.shopName} · {job.shopType}</div></div>
               <SalaryDisplay minSalary={job.minSalary} maxSalary={job.maxSalary} t={t} />
+
             </div>
             <div className="job-meta">
               <Badge label={`📍 ${job.location}`} type="gray" />
               <Badge label={job.experience === 0 ? t("freshersOk") : `${job.experience}${t("yrExp")}`} type="green" />
               <Badge label={job.posted_date} type="gray" />
+              {job.candidatesRequired && <Badge label={`👥 ${job.candidatesRequired} needed`} type="sky" />}
+              {job.genderPreference && job.genderPreference !== "Both can apply" && <Badge label={`⚧ ${job.genderPreference}`} type="saffron" />}
             </div>
             <div className="job-desc">{job.description}</div>
           </div>
@@ -1411,6 +1424,48 @@ function JobDetailPage({ store }) {
             <Badge label={job.shopType} type="sky" />
             <Badge label={job.experience === 0 ? t("freshersOk") : `${job.experience}+ ${t("yearsExp")}`} type="green" />
           </div>
+
+          {/* ✅ New details section */}
+          {(job.startTime || job.endTime || job.candidatesRequired || job.genderPreference) && (
+            <div style={{
+              background: "var(--gray-50)",
+              borderRadius: "var(--radius-sm)",
+              padding: "0.85rem",
+              marginTop: "0.75rem",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "0.6rem",
+              fontSize: "0.82rem"
+            }}>
+              {job.candidatesRequired && (
+                <div>
+                  <span style={{ color: "var(--gray-500)" }}>👥 Vacancies:</span>
+                  <strong style={{ marginLeft: "0.3rem" }}>{job.candidatesRequired}</strong>
+                </div>
+              )}
+              {job.genderPreference && (
+                <div>
+                  <span style={{ color: "var(--gray-500)" }}>⚧ Gender:</span>
+                  <strong style={{ marginLeft: "0.3rem" }}>{job.genderPreference}</strong>
+                </div>
+              )}
+              {job.startTime && job.endTime && (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <span style={{ color: "var(--gray-500)" }}>🕐 Timings:</span>
+                  <strong style={{ marginLeft: "0.3rem" }}>
+                    {job.startTime} – {job.endTime}
+                  </strong>
+                </div>
+              )}
+              {job.jobLocation && (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <span style={{ color: "var(--gray-500)" }}>📍 Job Location:</span>
+                  <strong style={{ marginLeft: "0.3rem" }}>{job.jobLocation}</strong>
+                </div>
+              )}
+            </div>
+          )}
+
           <hr className="divider" />
           <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "var(--navy)", marginBottom: "0.4rem" }}>{t("jobDescription")}</div>
           <p style={{ fontSize: "0.88rem", color: "var(--gray-700)", lineHeight: 1.65 }}>{job.description}</p>
@@ -1630,9 +1685,29 @@ function OwnerDashboard({ store }) {
 function PostJobPage({ store }) {
   const { t } = useLang();
   const { postJob, navigate, currentUser } = store;
-  const [form, setForm] = useState({ title: "", minSalary: "", maxSalary: "", experience: "", description: "" });
+
+  const LOCATIONS = ["Angul", "Talcher", "Dhenkanal", "Athmalik", "Others"];
+  const GENDER_OPTIONS = ["Male", "Female", "Both can apply"];
+
+  const [form, setForm] = useState({
+    title: "",
+    minSalary: "",
+    maxSalary: "",
+    experience: "",
+    description: "",
+    // ✅ New fields
+    candidatesRequired: "1",
+    jobLocation: "",
+    customLocation: "",
+    startTime: "",
+    endTime: "",
+    genderPreference: "Both can apply",
+  });
+
   const [errors, setErrors] = useState({});
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const validate = () => {
@@ -1640,15 +1715,29 @@ function PostJobPage({ store }) {
     if (!form.title) e.title = t("fillRequired");
     if (!form.minSalary || isNaN(form.minSalary)) e.minSalary = t("fillRequired");
     if (!form.maxSalary || isNaN(form.maxSalary)) e.maxSalary = t("fillRequired");
-    if (form.minSalary && form.maxSalary && parseInt(form.minSalary) > parseInt(form.maxSalary)) e.salary = t("salaryError");
+    if (parseInt(form.minSalary) > parseInt(form.maxSalary)) e.salary = t("salaryError");
     if (!form.description) e.description = t("fillRequired");
+    if (!form.jobLocation) e.jobLocation = t("fillRequired");
+    if (form.jobLocation === "Others" && !form.customLocation) e.customLocation = t("fillRequired");
+    if (!form.candidatesRequired || Number(form.candidatesRequired) < 1) e.candidatesRequired = "Please enter a valid number.";
     return e;
   };
 
   const handleSubmit = async () => {
     const e = validate();
     if (Object.keys(e).length > 0) { setErrors(e); return; }
-    await postJob({ ...form, minSalary: parseInt(form.minSalary), maxSalary: parseInt(form.maxSalary), experience: parseInt(form.experience) || 0 });
+    setSubmitting(true);
+    const result = await postJob({
+      ...form,
+      minSalary: parseInt(form.minSalary),
+      maxSalary: parseInt(form.maxSalary),
+      experience: parseInt(form.experience) || 0,
+    });
+    setSubmitting(false);
+    if (result?.error) {
+      setErrors({ submit: "Failed to post job. Please try again." });
+      return;
+    }
     setDone(true);
   };
 
@@ -1668,19 +1757,149 @@ function PostJobPage({ store }) {
         <p>{t("postJobSub")}</p>
       </div>
       <div className="section">
+        {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
+
+        {/* ── Basic Job Details ── */}
         <div className="card">
           <div className="card-title">{t("jobDetailsSection")}</div>
-          <Input label={t("jobTitle")} placeholder={t("jobTitlePlaceholder")} value={form.title} onChange={e => set("title", e.target.value)} error={errors.title} />
+
+          <Input
+            label={t("jobTitle")}
+            placeholder={t("jobTitlePlaceholder")}
+            value={form.title}
+            onChange={e => set("title", e.target.value)}
+            error={errors.title}
+          />
+
           <div className="form-row">
-            <Input label={t("minSalary")} type="number" placeholder={t("minSalaryPlaceholder")} value={form.minSalary} onChange={e => set("minSalary", e.target.value)} error={errors.minSalary} />
-            <Input label={t("maxSalary")} type="number" placeholder={t("maxSalaryPlaceholder")} value={form.maxSalary} onChange={e => set("maxSalary", e.target.value)} error={errors.maxSalary} />
+            <Input
+              label={t("minSalary")}
+              type="number"
+              placeholder={t("minSalaryPlaceholder")}
+              value={form.minSalary}
+              onChange={e => set("minSalary", e.target.value)}
+              error={errors.minSalary}
+            />
+            <Input
+              label={t("maxSalary")}
+              type="number"
+              placeholder={t("maxSalaryPlaceholder")}
+              value={form.maxSalary}
+              onChange={e => set("maxSalary", e.target.value)}
+              error={errors.maxSalary}
+            />
           </div>
           {errors.salary && <div className="form-error mb-1">{errors.salary}</div>}
-          <Input label={t("expRequired")} type="number" placeholder={t("expRequiredPlaceholder")} value={form.experience} onChange={e => set("experience", e.target.value)} hint={t("expRequiredHint")} />
-          <Input label={t("jobDescLabel")} as="textarea" placeholder={t("jobDescPlaceholder")} value={form.description} onChange={e => set("description", e.target.value)} error={errors.description} />
+
+          <div className="form-row">
+            <Input
+              label={t("expRequired")}
+              type="number"
+              placeholder={t("expRequiredPlaceholder")}
+              value={form.experience}
+              onChange={e => set("experience", e.target.value)}
+              hint={t("expRequiredHint")}
+            />
+            {/* ✅ Candidates Required */}
+            <Input
+              label="Candidates Required *"
+              type="number"
+              placeholder="e.g. 2"
+              value={form.candidatesRequired}
+              onChange={e => set("candidatesRequired", e.target.value)}
+              error={errors.candidatesRequired}
+              hint="How many people do you want to hire?"
+            />
+          </div>
+
+          <Input
+            label={t("jobDescLabel")}
+            as="textarea"
+            placeholder={t("jobDescPlaceholder")}
+            value={form.description}
+            onChange={e => set("description", e.target.value)}
+            error={errors.description}
+          />
         </div>
-        <div className="alert alert-info">{t("locationNote")} <strong>{currentUser?.shopName}, {currentUser?.location}</strong></div>
-        <button className="btn btn-saffron btn-full" onClick={handleSubmit}>{t("postJobBtn")}</button>
+
+        {/* ── Location & Schedule ── */}
+        <div className="card">
+          <div className="card-title">📍 Location & Schedule</div>
+
+          {/* ✅ Job Location Dropdown */}
+          <div className="form-group">
+            <label className="form-label">Job Location *</label>
+            <select
+              className={`form-input${errors.jobLocation ? " error" : ""}`}
+              value={form.jobLocation}
+              onChange={e => set("jobLocation", e.target.value)}
+            >
+              <option value="">-- Select City --</option>
+              {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+            {errors.jobLocation && <div className="form-error">{errors.jobLocation}</div>}
+          </div>
+
+          {/* ✅ Custom Location — shown only when "Others" is selected */}
+          {form.jobLocation === "Others" && (
+            <Input
+              label="Enter City Name *"
+              placeholder="Type the city or area name"
+              value={form.customLocation}
+              onChange={e => set("customLocation", e.target.value)}
+              error={errors.customLocation}
+            />
+          )}
+
+          {/* ✅ Job Timings */}
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Start Time</label>
+              <input
+                className="form-input"
+                type="time"
+                value={form.startTime}
+                onChange={e => set("startTime", e.target.value)}
+              />
+              <div className="form-hint">Work starts at what time?</div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">End Time</label>
+              <input
+                className="form-input"
+                type="time"
+                value={form.endTime}
+                onChange={e => set("endTime", e.target.value)}
+              />
+              <div className="form-hint">Work ends at what time?</div>
+            </div>
+          </div>
+
+          {/* ✅ Gender Preference */}
+          <div className="form-group">
+            <label className="form-label">Gender Preference</label>
+            <select
+              className="form-input"
+              value={form.genderPreference}
+              onChange={e => set("genderPreference", e.target.value)}
+            >
+              {GENDER_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <div className="form-hint">Who can apply for this job?</div>
+          </div>
+        </div>
+
+        <div className="alert alert-info">
+          {t("locationNote")} <strong>{currentUser?.shopName}, {currentUser?.location}</strong>
+        </div>
+
+        <button
+          className="btn btn-saffron btn-full"
+          onClick={handleSubmit}
+          disabled={submitting}
+        >
+          {submitting ? "Posting..." : t("postJobBtn")}
+        </button>
       </div>
     </>
   );
