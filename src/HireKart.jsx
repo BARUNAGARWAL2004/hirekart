@@ -469,8 +469,6 @@ function useStore() {
   // Fetch Data
   // ─────────────────────────────
 
-  const [loading, setLoading] = useState(true); // ← add this
-
   const fetchData = async () => {
     setLoading(true); // ← start loading
     const [usersRes, jobsRes, appsRes] = await Promise.all([
