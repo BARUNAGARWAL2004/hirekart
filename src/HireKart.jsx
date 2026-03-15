@@ -453,6 +453,9 @@ function useStore() {
     applications: []
   });
 
+  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
+
   const [currentUser, setCurrentUser] = useState(null);
   const [page, setPage] = useState("home");
   const [pageParams, setPageParams] = useState({});
@@ -467,7 +470,10 @@ function useStore() {
   // Fetch Data
   // ─────────────────────────────
 
+  const [loading, setLoading] = useState(true); // ← add this
+
   const fetchData = async () => {
+    setLoading(true); // ← start loading
     const [usersRes, jobsRes, appsRes] = await Promise.all([
       supabase.from("users").select("*"),
       supabase.from("jobs").select("*").order("posted_date", { ascending: false }),
@@ -476,10 +482,10 @@ function useStore() {
 
     if (usersRes.error || jobsRes.error || appsRes.error) {
       console.error("Supabase Error:", usersRes.error || jobsRes.error || appsRes.error);
+      setLoading(false);
       return;
     }
 
-    // ✅ Map users snake_case → camelCase
     const users = (usersRes.data || []).map(u => ({
       ...u,
       shopName: u.shop_name,
@@ -497,17 +503,27 @@ function useStore() {
       maxSalary: j.max_salary,
     }));
 
-    // ✅ Also re-sync currentUser if already logged in
     setData({ users, jobs, applications: appsRes.data || [] });
+    setLoading(false); // ← done loading
   };
 
+  useEffect(() => {
+    fetchData();
+  }, []); // ← runs once when app loads
   // ─────────────────────────────
   // Auth
   // ─────────────────────────────
 
   const login = (email, password) => {
-    const u = data.users.find(u => u.email === email && u.password === password);
-    if (u) { setCurrentUser(u); return u; }
+    if (loading) return "loading"; // ← guard: data not ready yet
+
+    const u = data.users.find(
+      u => u.email === email && u.password === password
+    );
+    if (u) {
+      setCurrentUser(u);
+      return u;
+    }
     return null;
   };
 
@@ -668,6 +684,7 @@ function useStore() {
 
   return {
     data,
+    loading,
     currentUser,
     page,
     pageParams,
@@ -1840,6 +1857,32 @@ function Footer({ navigate }) {
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export default function HireKart() {
   const store = useStore();
+
+  // ── Show loading screen until Supabase data is ready ──
+  if (store.loading) {
+    return (
+      <LangProvider>
+        <style>{CSS}</style>
+        <div style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--navy)",
+          fontFamily: "'Baloo 2', cursive"
+        }}>
+          <div style={{ fontSize: "2rem", fontWeight: 800, color: "white" }}>
+            Hire<span style={{ color: "#FF6B00" }}>Kart</span>
+          </div>
+          <div style={{ color: "#B8C8E0", marginTop: "1rem", fontSize: "0.9rem" }}>
+            Loading...
+          </div>
+        </div>
+      </LangProvider>
+    );
+  }
+
   return (
     <LangProvider>
       <style>{CSS}</style>
