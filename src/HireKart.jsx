@@ -44,12 +44,18 @@ const TRANSLATIONS = {
     welcomeBack: "Welcome Back",
     loginSub: "Login to your HireKart account",
     loginEmail: "Email / Phone",
+
+    loginEmailOrPhone: "Phone Number or Email",
+    loginEmailOrPhonePlaceholder: "Enter 10-digit phone or email",
+    loginHint: "You can login with your mobile number or email address",
+
     loginPassword: "Password",
     loginBtn: "Login →",
     loginNewHere: "New here?",
     signupAsWorker: "Sign up as Worker",
     or: "or",
     signupAsOwner: "Shop Owner",
+
     // Worker Signup
     workerSignupTitle: "👷 Worker Sign Up",
     workerSignupSub: "Create your free profile and find jobs nearby",
@@ -247,12 +253,18 @@ const TRANSLATIONS = {
     welcomeBack: "ସ୍ୱାଗତ",
     loginSub: "ଆପଣଙ୍କ ଅ୍ୟାକାଉଣ୍ଟରେ ଲଗଇନ କରନ୍ତୁ",
     loginEmail: "ଇମେଲ / ଫୋନ",
+
+    loginEmailOrPhone: "ଫୋନ ନଂ ବା ଇମେଲ",
+    loginEmailOrPhonePlaceholder: "୧୦ ଅଙ୍କ ଫୋନ ବା ଇମେଲ ଦିଅନ୍ତୁ",
+    loginHint: "ଆପଣ ମୋବାଇଲ ନଂ ବା ଇମେଲ ଦ୍ୱାରା ଲଗଇନ କରି ପାରିବେ",
+
     loginPassword: "ପାସୱାର୍ଡ",
     loginBtn: "ଲଗଇନ →",
     loginNewHere: "ନୂଆ ସଦସ୍ୟ?",
     signupAsWorker: "ଶ୍ରମିକ ଭାବେ ସାଇନ ଅପ",
     or: "ବା",
     signupAsOwner: "ଦୋକାନ ମାଲିକ",
+
     // Worker Signup
     workerSignupTitle: "👷 ଶ୍ରମିକ ସାଇନ ଅପ",
     workerSignupSub: "ଆପଣଙ୍କ ମାଗଣା ପ୍ରୋଫାଇଲ ତିଆରି କରି ଚାକିରି ଖୋଜନ୍ତୁ",
@@ -511,12 +523,18 @@ function useStore() {
   // Auth
   // ─────────────────────────────
 
-  const login = (email, password) => {
-    if (loading) return "loading"; // ← guard: data not ready yet
+  const login = (emailOrPhone, password) => {
+    if (loading) return "loading";
 
-    const u = data.users.find(
-      u => u.email === email && u.password === password
-    );
+    const isPhone = /^\d{10}$/.test(emailOrPhone.trim());
+
+    const u = data.users.find(u => {
+      const matchField = isPhone
+        ? u.phone === emailOrPhone.trim()
+        : u.email === emailOrPhone.trim().toLowerCase();
+      return matchField && u.password === password;
+    });
+
     if (u) {
       setCurrentUser(u);
       return u;
@@ -534,6 +552,12 @@ function useStore() {
   // ─────────────────────────────
 
   const registerWorker = async (form) => {
+    // ✅ Check for duplicate phone before inserting
+    const duplicate = data.users.find(u => u.phone === form.phone);
+    if (duplicate) {
+      return { error: "This phone number is already registered. Please login instead." };
+    }
+
     const { data: newUser, error } = await supabase
       .from("users")
       .insert([{ role: "worker", ...form }])
@@ -542,13 +566,13 @@ function useStore() {
 
     if (error) {
       console.error(error);
-      return null;
+      return { error: "Registration failed. Please try again." };
     }
 
     await fetchData();
-    setCurrentUser(newUser);
-
-    return newUser;
+    const mapped = { ...newUser, shopName: newUser.shop_name, shopType: newUser.shop_type, expectedSalary: newUser.expected_salary, willingToRelocate: newUser.willing_to_relocate };
+    setCurrentUser(mapped);
+    return mapped;
   };
 
   // ─────────────────────────────
@@ -1021,25 +1045,32 @@ function HomePage({ store }) {
 
 function LoginPage({ store }) {
   const { t } = useLang();
-  const { login, navigate, loading } = store;  // ← add loading
-  const [email, setEmail] = useState("");
+  const { login, navigate, loading } = store;
+  const [input, setInput] = useState("");       // ← single field for email OR phone
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleLogin = () => {
-    if (!email || !password) { setError(t("fillRequired")); return; }
+    if (!input || !password) { setError(t("fillRequired")); return; }
 
-    const result = login(email, password);
+    // If it looks like a phone number, validate it's exactly 10 digits
+    const looksLikePhone = /^\d+$/.test(input.trim());
+    if (looksLikePhone && input.trim().length !== 10) {
+      setError(t("phoneError"));
+      return;
+    }
+
+    const result = login(input.trim(), password);
 
     if (result === "loading") {
       setError("Please wait, data is still loading...");
       return;
     }
     if (!result) {
-      setError("Wrong email or password. Try again.");
+      setError("Wrong phone/email or password. Try again.");
       return;
     }
-    // ✅ success
+
     if (result.role === "worker") navigate("worker-dashboard");
     else if (result.role === "owner") navigate("owner-dashboard");
     else navigate("admin");
@@ -1054,11 +1085,46 @@ function LoginPage({ store }) {
       </div>
       {error && <div className="alert alert-error">{error}</div>}
       <div className="card">
-        <Input label={t("loginEmail")} type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} />
-        <Input label={t("loginPassword")} type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} />
-        <button className="btn btn-saffron btn-full" onClick={handleLogin} disabled={loading}>
-          {loading ? "Loading..." : t("loginBtn")}  {/* ← disable while loading */}
+        <div className="form-group">
+          <label className="form-label">{t("loginEmailOrPhone")}</label>
+          <input
+            className="form-input"
+            type="text"
+            inputMode="text"
+            placeholder={t("loginEmailOrPhonePlaceholder")}
+            value={input}
+            onChange={e => {
+              // If user is typing only digits, restrict to 10
+              const val = e.target.value;
+              const onlyDigits = /^\d*$/.test(val);
+              if (onlyDigits) {
+                setInput(val.slice(0, 10));
+              } else {
+                setInput(val);
+              }
+            }}
+          />
+          <div className="form-hint">{t("loginHint")}</div>
+        </div>
+        <Input
+          label={t("loginPassword")}
+          type="password"
+          placeholder="Enter password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+        />
+        {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
+
+        <button
+          className="btn btn-saffron btn-full"
+          onClick={handleLogin}
+          disabled={loading}
+        >
+          {loading ? "Loading..." : t("loginBtn")}
         </button>
+        <div className="alert alert-info mt-1" style={{ fontSize: "0.76rem" }}>
+          Demo: <b>raju@example.com</b> / pass (Worker) | <b>priya@example.com</b> / pass (Owner) | <b>admin@hirekart.in</b> / admin123
+        </div>
       </div>
       <div style={{ textAlign: "center", marginTop: "1rem", fontSize: "0.84rem", color: "var(--gray-500)" }}>
         {t("loginNewHere")} <span style={{ color: "var(--saffron)", fontWeight: 700, cursor: "pointer" }} onClick={() => navigate("worker-signup")}>{t("signupAsWorker")}</span> {t("or")} <span style={{ color: "var(--green)", fontWeight: 700, cursor: "pointer" }} onClick={() => navigate("owner-signup")}>{t("signupAsOwner")}</span>
@@ -1096,7 +1162,13 @@ function WorkerSignup({ store }) {
       ? [...form.skills.filter(s => s !== "Others"), form.customSkill]
       : form.skills;
 
-    await registerWorker({ ...form, skills });
+    const result = await registerWorker({ ...form, skills });
+
+    // ✅ Handle duplicate phone or other errors
+    if (result?.error) {
+      setErrors({ submit: result.error });
+      return;
+    }
 
     navigate("worker-dashboard");
   };
