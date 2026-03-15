@@ -1113,8 +1113,7 @@ function LoginPage({ store }) {
           value={password}
           onChange={e => setPassword(e.target.value)}
         />
-        {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
-
+        
         <button
           className="btn btn-saffron btn-full"
           onClick={handleLogin}
