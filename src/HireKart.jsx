@@ -1021,17 +1021,27 @@ function HomePage({ store }) {
 
 function LoginPage({ store }) {
   const { t } = useLang();
-  const { login, navigate } = store;
+  const { login, navigate, loading } = store;  // ← add loading
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleLogin = () => {
     if (!email || !password) { setError(t("fillRequired")); return; }
-    const user = login(email, password);
-    if (!user) { setError("Wrong email or password. Try again."); return; }
-    if (user.role === "worker") navigate("worker-dashboard");
-    else if (user.role === "owner") navigate("owner-dashboard");
+
+    const result = login(email, password);
+
+    if (result === "loading") {
+      setError("Please wait, data is still loading...");
+      return;
+    }
+    if (!result) {
+      setError("Wrong email or password. Try again.");
+      return;
+    }
+    // ✅ success
+    if (result.role === "worker") navigate("worker-dashboard");
+    else if (result.role === "owner") navigate("owner-dashboard");
     else navigate("admin");
   };
 
@@ -1046,10 +1056,9 @@ function LoginPage({ store }) {
       <div className="card">
         <Input label={t("loginEmail")} type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} />
         <Input label={t("loginPassword")} type="password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)} />
-        <button className="btn btn-saffron btn-full" onClick={handleLogin}>{t("loginBtn")}</button>
-        <div className="alert alert-info mt-1" style={{ fontSize: "0.76rem" }}>
-          Demo: <b>raju@example.com</b> / pass (Worker) | <b>priya@example.com</b> / pass (Owner) | <b>admin@hirekart.in</b> / admin123
-        </div>
+        <button className="btn btn-saffron btn-full" onClick={handleLogin} disabled={loading}>
+          {loading ? "Loading..." : t("loginBtn")}  {/* ← disable while loading */}
+        </button>
       </div>
       <div style={{ textAlign: "center", marginTop: "1rem", fontSize: "0.84rem", color: "var(--gray-500)" }}>
         {t("loginNewHere")} <span style={{ color: "var(--saffron)", fontWeight: 700, cursor: "pointer" }} onClick={() => navigate("worker-signup")}>{t("signupAsWorker")}</span> {t("or")} <span style={{ color: "var(--green)", fontWeight: 700, cursor: "pointer" }} onClick={() => navigate("owner-signup")}>{t("signupAsOwner")}</span>
