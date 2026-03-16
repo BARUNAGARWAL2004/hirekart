@@ -830,12 +830,13 @@ const CSS = `
   .how-card p { font-size: 0.78rem; color: var(--gray-500); line-height: 1.5; }
 
   /* JOB CARD */
-  .job-card { background: var(--white); border-radius: var(--radius); padding: 1.1rem; box-shadow: var(--shadow); margin-bottom: 0.85rem; border-left: 4px solid var(--saffron); transition: box-shadow 0.2s; cursor: pointer; }
+  .job-card { background: var(--white); border-radius: var(--radius); padding: 0.9rem; box-shadow: var(--shadow); margin-bottom: 0.75rem; border-left: 4px solid var(--saffron); transition: box-shadow 0.2s; cursor: pointer; }
   .job-card:hover { box-shadow: var(--shadow-lg); }
   .job-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
-  .job-title { font-family: 'Baloo 2', cursive; font-size: 1.05rem; font-weight: 700; color: var(--navy); }
-  .job-shop { font-size: 0.8rem; color: var(--gray-500); margin-top: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-  .salary-range { font-family: 'Baloo 2', cursive; font-size: 0.95rem; font-weight: 800; color: var(--saffron); white-space: nowrap; }
+  .job-title { font-family: 'Baloo 2', cursive; font-size: 0.98rem; font-weight: 700; color: var(--navy); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .job-shop { font-size: 0.78rem; color: var(--gray-500); margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .job-location { font-size: 0.78rem; color: var(--gray-500); margin-top: 0.1rem; }
+  .salary-range { font-family: 'Baloo 2', cursive; font-size: 0.88rem; font-weight: 800; color: var(--saffron); white-space: nowrap; flex-shrink: 0; }
 
   /* BADGE */
   .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
@@ -942,9 +943,21 @@ const Avatar = ({ name, green, lg }) => {
 const Badge = ({ label, type = "gray" }) => <span className={`badge badge-${type}`}>{label}</span>;
 const Empty = ({ icon, text }) => <div className="empty"><div className="empty-icon">{icon}</div><p>{text}</p></div>;
 
+function formatSalary(amount) {
+  if (!amount) return "";
+  if (amount >= 100000) return `₹${(amount / 100000).toFixed(1).replace(/\.0$/, "")}L`;
+  if (amount >= 1000) return `₹${(amount / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return `₹${amount}`;
+}
+
 function SalaryDisplay({ minSalary, maxSalary, t }) {
-  if (minSalary && maxSalary) return <span className="salary-range">₹{Number(minSalary).toLocaleString()} – ₹{Number(maxSalary).toLocaleString()}<span style={{ fontSize: "0.7rem", fontWeight: 400, color: "var(--gray-500)" }}>{t("perMonthSuffix")}</span></span>;
-  if (minSalary) return <span className="salary-range">₹{Number(minSalary).toLocaleString()}{t("perMonthSuffix")}</span>;
+  if (minSalary && maxSalary) return (
+    <span className="salary-range">
+      {formatSalary(minSalary)}–{formatSalary(maxSalary)}
+      <span style={{ fontSize: "0.68rem", fontWeight: 400, color: "var(--gray-500)" }}>{t("perMonthSuffix")}</span>
+    </span>
+  );
+  if (minSalary) return <span className="salary-range">{formatSalary(minSalary)}<span style={{ fontSize: "0.68rem", fontWeight: 400, color: "var(--gray-500)" }}>{t("perMonthSuffix")}</span></span>;
   return null;
 }
 
@@ -1355,19 +1368,18 @@ function JobsPage({ store }) {
         {jobs.length === 0 ? <Empty icon="🔎" text="No jobs found. Try different filters." /> : jobs.map(job => (
           <div key={job.id} className="job-card" onClick={() => navigate("job-detail", { jobId: job.id })}>
             <div className="job-card-header">
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="job-title">{job.title}</div>
-                <div className="job-shop">🏪 {job.shopName} </div>
-                <div className="text-sm text-gray">📍 {job.jobLocation || job.location}</div>
+                <div className="job-shop">🏪 {job.shopName}</div>
+                <div className="job-location">📍 {job.jobLocation || job.location}</div>
               </div>
               <SalaryDisplay minSalary={job.minSalary} maxSalary={job.maxSalary} t={t} />
             </div>
-            <div className="job-meta">
-              <Badge label={`📍 ${job.jobLocation || job.location}`} type="gray" />
+            <div className="job-meta" style={{ marginTop: "0.5rem" }}>
               <Badge label={job.experience === 0 ? t("freshersOk") : `${job.experience}${t("yrExp")}`} type="green" />
+              {job.candidatesRequired && <Badge label={`👥 ${job.candidatesRequired}`} type="sky" />}
+              {job.genderPreference && job.genderPreference !== "Both can apply" && <Badge label={job.genderPreference} type="saffron" />}
               <Badge label={job.posted_date} type="gray" />
-              {job.candidatesRequired && <Badge label={`👥 ${job.candidatesRequired} needed`} type="sky" />}
-              {job.genderPreference && job.genderPreference !== "Both can apply" && <Badge label={`⚧ ${job.genderPreference}`} type="saffron" />}
             </div>
             <div className="job-desc">{job.description}</div>
           </div>
@@ -1552,12 +1564,16 @@ function WorkerDashboard({ store }) {
             {allJobs.length === 0 ? <Empty icon="💼" text={t("noJobsYet")} /> : allJobs.map(job => (
               <div key={job.id} className="job-card" onClick={() => navigate("job-detail", { jobId: job.id })}>
                 <div className="job-card-header">
-                  <div><div className="job-title">{job.title}</div><div className="job-shop">{job.shopName} · {job.shopType}</div></div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="job-title">{job.title}</div>
+                    <div className="job-shop">🏪 {job.shopName}</div>
+                    <div className="job-location">📍 {job.jobLocation || job.location}</div>
+                  </div>
                   <SalaryDisplay minSalary={job.minSalary} maxSalary={job.maxSalary} t={t} />
                 </div>
-                <div className="job-meta">
-                  <Badge label={`📍 ${job.jobLocation || job.location}`} type="gray" />
+                <div className="job-meta" style={{ marginTop: "0.5rem" }}>
                   <Badge label={job.experience === 0 ? t("freshersOk") : `${job.experience}${t("yrExp")}`} type="green" />
+                  {job.candidatesRequired && <Badge label={`👥 ${job.candidatesRequired}`} type="sky" />}
                 </div>
               </div>
             ))}
