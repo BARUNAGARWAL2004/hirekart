@@ -1355,9 +1355,12 @@ function JobsPage({ store }) {
         {jobs.length === 0 ? <Empty icon="🔎" text="No jobs found. Try different filters." /> : jobs.map(job => (
           <div key={job.id} className="job-card" onClick={() => navigate("job-detail", { jobId: job.id })}>
             <div className="job-card-header">
-              <div><div className="job-title">{job.title}</div><div className="job-shop">🏪 {job.shopName} · {job.shopType}</div></div>
+              <div>
+                <div className="job-title">{job.title}</div>
+                <div className="job-shop">🏪 {job.shopName} · {job.shopType}</div>
+                <div className="text-sm text-gray">📍 {job.jobLocation || job.location}</div>
+              </div>
               <SalaryDisplay minSalary={job.minSalary} maxSalary={job.maxSalary} t={t} />
-
             </div>
             <div className="job-meta">
               <Badge label={`📍 ${job.jobLocation || job.location}`} type="gray" />
@@ -1659,7 +1662,11 @@ function OwnerDashboard({ store }) {
             return (
               <div key={job.id} className="job-card">
                 <div className="job-card-header">
-                  <div><div className="job-title">{job.title}</div><div className="job-shop">{job.location}</div></div>
+                  <div>
+                    <div className="job-title">{job.title}</div>
+                    <div className="job-shop">🏪 {job.shopName}</div>
+                    <div className="text-sm text-gray">📍 {job.jobLocation || job.location}</div>
+                  </div>
                   <Badge label={`${applicants.length} applied`} type={applicants.length > 0 ? "saffron" : "gray"} />
                 </div>
                 <div style={{ marginTop: "0.3rem" }}><SalaryDisplay minSalary={job.minSalary} maxSalary={job.maxSalary} t={t} /></div>
