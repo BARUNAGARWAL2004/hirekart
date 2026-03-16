@@ -834,7 +834,7 @@ const CSS = `
   .job-card:hover { box-shadow: var(--shadow-lg); }
   .job-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
   .job-title { font-family: 'Baloo 2', cursive; font-size: 1.05rem; font-weight: 700; color: var(--navy); }
-  .job-shop { font-size: 0.8rem; color: var(--gray-500); margin-top: 0.1rem; }
+  .job-shop { font-size: 0.8rem; color: var(--gray-500); margin-top: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .salary-range { font-family: 'Baloo 2', cursive; font-size: 0.95rem; font-weight: 800; color: var(--saffron); white-space: nowrap; }
 
   /* BADGE */
@@ -1357,7 +1357,7 @@ function JobsPage({ store }) {
             <div className="job-card-header">
               <div>
                 <div className="job-title">{job.title}</div>
-                <div className="job-shop">🏪 {job.shopName} · {job.shopType}</div>
+                <div className="job-shop">🏪 {job.shopName} </div>
                 <div className="text-sm text-gray">📍 {job.jobLocation || job.location}</div>
               </div>
               <SalaryDisplay minSalary={job.minSalary} maxSalary={job.maxSalary} t={t} />
