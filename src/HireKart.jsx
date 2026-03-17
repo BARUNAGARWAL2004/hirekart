@@ -952,13 +952,19 @@ function formatSalary(amount) {
 }
 
 function SalaryDisplay({ minSalary, maxSalary, t }) {
+  const fmt = (n) => n ? `₹${Number(n).toLocaleString("en-IN")}` : "";
   if (minSalary && maxSalary) return (
     <span className="salary-range">
-      {formatSalary(minSalary)}–{formatSalary(maxSalary)}
+      {fmt(minSalary)} – {fmt(maxSalary)}
       <span style={{ fontSize: "0.68rem", fontWeight: 400, color: "var(--gray-500)" }}>{t("perMonthSuffix")}</span>
     </span>
   );
-  if (minSalary) return <span className="salary-range">{formatSalary(minSalary)}<span style={{ fontSize: "0.68rem", fontWeight: 400, color: "var(--gray-500)" }}>{t("perMonthSuffix")}</span></span>;
+  if (minSalary) return (
+    <span className="salary-range">
+      {fmt(minSalary)}
+      <span style={{ fontSize: "0.68rem", fontWeight: 400, color: "var(--gray-500)" }}>{t("perMonthSuffix")}</span>
+    </span>
+  );
   return null;
 }
 
@@ -1749,7 +1755,7 @@ function PostJobPage({ store }) {
     title: "",
     minSalary: "",
     maxSalary: "",
-    experience: "",
+    experience: "0",
     description: "",
     candidatesRequired: "1",
     jobLocation: "",
@@ -1768,13 +1774,20 @@ function PostJobPage({ store }) {
   const validate = () => {
     const e = {};
     if (!form.title) e.title = t("fillRequired");
-    if (!form.minSalary || isNaN(form.minSalary)) e.minSalary = t("fillRequired");
-    if (!form.maxSalary || isNaN(form.maxSalary)) e.maxSalary = t("fillRequired");
-    if (parseInt(form.minSalary) > parseInt(form.maxSalary)) e.salary = t("salaryError");
+
+    // Salary validation
+    if (!form.minSalary || isNaN(form.minSalary) || Number(form.minSalary) < 0)
+      e.minSalary = t("fillRequired");
+    if (!form.maxSalary || isNaN(form.maxSalary) || Number(form.maxSalary) < 0)
+      e.maxSalary = t("fillRequired");
+    if (form.minSalary && form.maxSalary && parseInt(form.minSalary) > parseInt(form.maxSalary))
+      e.salary = "⚠️ Min salary cannot be greater than max salary.";
+
     if (!form.description) e.description = t("fillRequired");
     if (!form.jobLocation) e.jobLocation = t("fillRequired");
     if (form.jobLocation === "Others" && !form.customLocation) e.customLocation = t("fillRequired");
-    if (!form.candidatesRequired || Number(form.candidatesRequired) < 1) e.candidatesRequired = "Please enter a valid number.";
+    if (!form.candidatesRequired || Number(form.candidatesRequired) < 1)
+      e.candidatesRequired = "Please enter a valid number.";
     return e;
   };
 
@@ -1834,30 +1847,48 @@ function PostJobPage({ store }) {
             <Input
               label={t("minSalary")}
               type="number"
-              placeholder={t("minSalaryPlaceholder")}
+              placeholder="e.g. 8000"
               value={form.minSalary}
-              onChange={e => set("minSalary", e.target.value)}
+              min="0"
+              onChange={e => {
+                const val = e.target.value;
+                if (val === "" || Number(val) >= 0) set("minSalary", val);
+              }}
               error={errors.minSalary}
+              hint="Minimum monthly salary"
             />
             <Input
               label={t("maxSalary")}
               type="number"
-              placeholder={t("maxSalaryPlaceholder")}
+              placeholder="e.g. 15000"
               value={form.maxSalary}
-              onChange={e => set("maxSalary", e.target.value)}
+              min="0"
+              onChange={e => {
+                const val = e.target.value;
+                if (val === "" || Number(val) >= 0) set("maxSalary", val);
+              }}
               error={errors.maxSalary}
+              hint="Maximum monthly salary"
             />
           </div>
-          {errors.salary && <div className="form-error mb-1">{errors.salary}</div>}
+          {errors.salary && (
+            <div className="alert alert-error" style={{ padding: "0.5rem 0.9rem", fontSize: "0.82rem", marginBottom: "0.75rem" }}>
+              {errors.salary}
+            </div>
+          )}
 
           <div className="form-row">
             <Input
               label={t("expRequired")}
               type="number"
-              placeholder={t("expRequiredPlaceholder")}
+              placeholder="0"
               value={form.experience}
-              onChange={e => set("experience", e.target.value)}
-              hint={t("expRequiredHint")}
+              min="0"
+              onChange={e => {
+                const val = e.target.value;
+                if (val === "" || Number(val) >= 0) set("experience", val);
+              }}
+              hint="Enter 0 to welcome freshers"
             />
             {/* ✅ Candidates Required */}
             <Input
