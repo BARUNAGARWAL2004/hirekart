@@ -514,6 +514,7 @@ function useStore() {
       shopType: u.shop_type,
       expectedSalary: u.expected_salary,
       willingToRelocate: u.willing_to_relocate,
+      gender: u.gender,
     }));
 
     const jobs = (jobsRes.data || []).map(j => ({
@@ -1017,6 +1018,29 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
 
 // ─── Pages ────────────────────────────────────────────────────────────────────
 
+function JobCard({ job, navigate, t }) {
+  return (
+    <div className="job-card" onClick={() => navigate("job-detail", { jobId: job.id })}>
+      <div className="job-card-header">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="job-title">{job.title}</div>
+          <div className="job-shop">🏪 {job.shopName}</div>
+          <div className="job-location">📍 {job.jobLocation || job.location}</div>
+        </div>
+        <SalaryDisplay minSalary={job.minSalary} maxSalary={job.maxSalary} t={t} />
+      </div>
+      <div className="job-meta" style={{ marginTop: "0.5rem" }}>
+        <Badge label={job.experience === 0 ? t("freshersOk") : `${job.experience}${t("yrExp")}`} type="green" />
+        {job.candidatesRequired && <Badge label={`👥 ${job.candidatesRequired}`} type="sky" />}
+        {job.genderPreference && job.genderPreference !== "Both can apply" && <Badge label={job.genderPreference} type="saffron" />}
+        <Badge label={job.posted_date} type="gray" />
+      </div>
+      {job.description && <div className="job-desc">{job.description}</div>}
+    </div>
+  );
+}
+
+
 function HomePage({ store }) {
   const { t } = useLang();
   const { navigate, data } = store;
@@ -1174,8 +1198,7 @@ function WorkerSignup({ store }) {
   const SKILL_OPTIONS = ["Sales", "Cashier", "Stock Management", "Customer Service", "Delivery", "Cleaning", "Computer / Billing", "Medical Knowledge", "Mobile Repair", "Tailoring", "Others"];
   const locations = ["Angul", "Talcher", "Dhenkanal", "Athmalik", "Other"];
 
-  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", location: "", skills: [], customSkill: "", experience: "", expectedSalary: "", willingToRelocate: false, about: "" });
-  const [errors, setErrors] = useState({});
+  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", location: "", skills: [], customSkill: "", experience: "", expectedSalary: "", willingToRelocate: false, about: "", gender: "Male" }); const [errors, setErrors] = useState({});
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleSkill = (s) => set("skills", form.skills.includes(s) ? form.skills.filter(x => x !== s) : [...form.skills, s]);
@@ -1244,6 +1267,19 @@ function WorkerSignup({ store }) {
             <Input label={t("experience")} type="number" placeholder={t("experiencePlaceholder")} value={form.experience} onChange={e => set("experience", e.target.value)} hint={t("experienceHint")} />
             <Input label={t("expectedSalary")} type="number" placeholder={t("expectedSalaryPlaceholder")} value={form.expectedSalary} onChange={e => set("expectedSalary", e.target.value)} />
           </div>
+
+          <div className="form-group">
+            <label className="form-label">Gender *</label>
+            <div style={{ display: "flex", gap: "1rem", marginTop: "0.3rem" }}>
+              {["Male", "Female", "Other"].map(g => (
+                <label key={g} style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.88rem", cursor: "pointer" }}>
+                  <input type="radio" name="gender" checked={form.gender === g} onChange={() => set("gender", g)} />
+                  {g}
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div className="form-group">
             <label className="form-label">{t("willingToRelocate")}</label>
             <div style={{ display: "flex", gap: "1rem", marginTop: "0.3rem" }}>
@@ -1366,23 +1402,7 @@ function JobsPage({ store }) {
           )}
         </div>
         {jobs.length === 0 ? <Empty icon="🔎" text="No jobs found. Try different filters." /> : jobs.map(job => (
-          <div key={job.id} className="job-card" onClick={() => navigate("job-detail", { jobId: job.id })}>
-            <div className="job-card-header">
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="job-title">{job.title}</div>
-                <div className="job-shop">🏪 {job.shopName}</div>
-                <div className="job-location">📍 {job.jobLocation || job.location}</div>
-              </div>
-              <SalaryDisplay minSalary={job.minSalary} maxSalary={job.maxSalary} t={t} />
-            </div>
-            <div className="job-meta" style={{ marginTop: "0.5rem" }}>
-              <Badge label={job.experience === 0 ? t("freshersOk") : `${job.experience}${t("yrExp")}`} type="green" />
-              {job.candidatesRequired && <Badge label={`👥 ${job.candidatesRequired}`} type="sky" />}
-              {job.genderPreference && job.genderPreference !== "Both can apply" && <Badge label={job.genderPreference} type="saffron" />}
-              <Badge label={job.posted_date} type="gray" />
-            </div>
-            <div className="job-desc">{job.description}</div>
-          </div>
+          <JobCard key={job.id} job={job} navigate={navigate} t={t} />
         ))}
         {!currentUser && <div className="alert alert-info">🙋 <strong>{t("signupToApply")}</strong> <span style={{ cursor: "pointer", textDecoration: "underline" }} onClick={() => navigate("worker-signup")}>{t("signupToApplyLink")}</span>{t("signupToApplyText")}</div>}
       </div>
@@ -1760,7 +1780,11 @@ function PostJobPage({ store }) {
 
   const handleSubmit = async () => {
     const e = validate();
-    if (Object.keys(e).length > 0) { setErrors(e); return; }
+    if (Object.keys(e).length > 0) {
+      setErrors({ ...e, submit: "⚠️ Please fill all required fields before posting." });
+      window.scrollTo(0, 0);
+      return;
+    }
     setSubmitting(true);
     const result = await postJob({
       ...form,
