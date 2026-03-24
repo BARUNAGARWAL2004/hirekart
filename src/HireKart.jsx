@@ -515,6 +515,13 @@ function useStore() {
       expectedSalary: u.expected_salary,
       willingToRelocate: u.willing_to_relocate,
       gender: u.gender,
+      primarySkill: u.primary_skill,
+      qualification: u.qualification,
+      state: u.state,
+      district: u.district,
+      taluk: u.taluk,
+      pincode: u.pincode,
+      languages: u.languages,
     }));
 
     const jobs = (jobsRes.data || []).map(j => ({
@@ -1198,42 +1205,112 @@ function LoginPage({ store }) {
   );
 }
 
+// ─── WorkerSignup constants ───────────────────────────────────────────────────
+const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
+const MONTHS = ["01 - Jan", "02 - Feb", "03 - Mar", "04 - Apr", "05 - May", "06 - Jun", "07 - Jul", "08 - Aug", "09 - Sep", "10 - Oct", "11 - Nov", "12 - Dec"];
+const YEARS = Array.from({ length: 60 }, (_, i) => String(new Date().getFullYear() - 18 - i));
+
+const LANGUAGES = ["Little English", "English", "ଓଡ଼ିଆ (Odia)", "हिन्दी (Hindi)", "Other"];
+
+const SKILL_OPTIONS_LIST = ["Sales", "Helper", "Delivery", "Electrician", "Plumber", "Cook", "House Maid", "Office Boy", "Receptionist", "Driver", "Technician", "Security Guard", "Carpenter", "Mechanic", "Beautician", "Tailor", "Computer Operator", "Data Entry", "Warehouse Helper", "Other"];
+
+const QUALIFICATIONS = ["PG Degree (M.A, M.Com, M.Sc, etc.)", "Professional Degree (B.E, M.E, MBA, MBBS, etc.)", "UG Degree (B.A, B.Com, B.Sc, etc.)", "Diploma", "ITI", "12th and below", "10th and below"];
+
+const EXP_YEARS = Array.from({ length: 21 }, (_, i) => String(i));
+
+const ODISHA_DISTRICTS = ["Angul", "Dhenkanal", "Cuttack", "Khordha", "Puri", "Jagatsinghpur", "Kendrapara", "Jajpur", "Bhadrak", "Balasore", "Mayurbhanj", "Keonjhar", "Sundargarh", "Sambalpur", "Bargarh", "Jharsuguda", "Balangir", "Subarnapur", "Kalahandi", "Nabarangpur", "Rayagada", "Koraput", "Malkangiri", "Ganjam", "Gajapati", "Kandhamal", "Boudh", "Nayagarh", "Deogarh"];
+
+const STATES = ["Odisha", "Bihar", "Jharkhand", "West Bengal", "Chhattisgarh", "Uttar Pradesh", "Maharashtra", "Other"];
+
+const SECTION_TITLE_STYLE = {
+  fontFamily: "'Baloo 2', cursive",
+  fontSize: "1.05rem",
+  fontWeight: 800,
+  color: "#0B3C5D",
+  marginBottom: "1rem",
+  paddingBottom: "0.4rem",
+  borderBottom: "2px solid var(--saffron-pale)",
+  letterSpacing: "0.01em"
+};
+
 function WorkerSignup({ store }) {
   const { t } = useLang();
   const { registerWorker, navigate } = store;
-  const SKILL_OPTIONS = ["Sales", "Cashier", "Stock Management", "Customer Service", "Delivery", "Cleaning", "Computer / Billing", "Medical Knowledge", "Mobile Repair", "Tailoring", "Others"];
-  const locations = ["Angul", "Talcher", "Dhenkanal", "Athmalik", "Other"];
 
-  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", location: "", skills: [], customSkill: "", experience: "", expectedSalary: "", willingToRelocate: false, about: "", gender: "Male" }); const [errors, setErrors] = useState({});
+  const [form, setForm] = useState({
+    // Personal
+    name: "",
+    dobDay: "",
+    dobMonth: "",
+    dobYear: "",
+    phone: "",
+    email: "",
+    password: "",
+    gender: "",
+    languages: [],
+    // Work
+    skill: "",
+    qualification: "",
+    experience: "0",
+    jobTypes: [],
+    expectedSalary: "",
+    about: "",
+    // Location
+    state: "Odisha",
+    district: "",
+    taluk: "",
+    pincode: "",
+  });
 
+  const [errors, setErrors] = useState({});
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const toggleSkill = (s) => set("skills", form.skills.includes(s) ? form.skills.filter(x => x !== s) : [...form.skills, s]);
+
+  const toggleMulti = (key, val) =>
+    set(key, form[key].includes(val)
+      ? form[key].filter(x => x !== val)
+      : [...form[key], val]);
 
   const validate = () => {
     const e = {};
     if (!form.name) e.name = t("fillRequired");
     if (!validatePhone(form.phone)) e.phone = true;
-    if (!form.password) e.password = t("fillRequired");
-    if (!form.location) e.location = t("fillRequired");
+    if (!form.password || form.password.length < 6) e.password = "Password must be at least 6 characters.";
+    if (!form.gender) e.gender = t("fillRequired");
+    if (!form.skill) e.skill = t("fillRequired");
+    if (!form.state) e.state = t("fillRequired");
+    if (!form.district) e.district = t("fillRequired");
     return e;
   };
 
   const handleSubmit = async () => {
     const e = validate();
-    if (Object.keys(e).length > 0) { setErrors(e); return; }
+    if (Object.keys(e).length > 0) { setErrors(e); window.scrollTo(0, 0); return; }
 
-    const skills = form.skills.includes("Others") && form.customSkill
-      ? [...form.skills.filter(s => s !== "Others"), form.customSkill]
-      : form.skills;
+    const result = await registerWorker({
+      name: form.name,
+      phone: form.phone,
+      email: form.email || null,
+      password: form.password,
+      gender: form.gender,
+      location: form.district,
+      skills: form.jobTypes.length > 0 ? form.jobTypes : [form.skill],
+      experience: parseInt(form.experience) || 0,
+      expectedSalary: Number(form.expectedSalary) || 0,
+      about: form.about,
+      // extra fields stored as JSON or text — adjust to your schema
+      dob: form.dobDay && form.dobMonth && form.dobYear
+        ? `${form.dobYear}-${form.dobMonth.slice(0, 2)}-${form.dobDay}`
+        : null,
+      languages: form.languages.join(", "),
+      qualification: form.qualification,
+      primary_skill: form.skill,
+      state: form.state,
+      district: form.district,
+      taluk: form.taluk,
+      pincode: form.pincode,
+    });
 
-    const result = await registerWorker({ ...form, skills });
-
-    // ✅ Handle duplicate phone or other errors
-    if (result?.error) {
-      setErrors({ submit: result.error });
-      return;
-    }
-
+    if (result?.error) { setErrors({ submit: result.error }); return; }
     navigate("worker-dashboard");
   };
 
@@ -1243,62 +1320,261 @@ function WorkerSignup({ store }) {
         <h2>{t("workerSignupTitle")}</h2>
         <p>{t("workerSignupSub")}</p>
       </div>
+
       <div className="section">
-        <div className="card">
-          <div className="card-title">{t("personalDetails")}</div>
-          <Input label={t("fullName")} placeholder={t("fullNamePlaceholder")} value={form.name} onChange={e => set("name", e.target.value)} error={errors.name} />
-          <div className="form-row">
-            <PhoneInput label={t("phone")} placeholder={t("phonePlaceholder")} value={form.phone} onChange={v => set("phone", v)} error={errors.phone} t={t} />
-            <Select label={t("yourLocation")} options={locations} value={form.location} onChange={e => set("location", e.target.value)} />
-          </div>
-          <div className="form-row">
-            <Input label={t("emailOptional")} type="email" placeholder={t("emailPlaceholder")} value={form.email} onChange={e => set("email", e.target.value)} />
-            <Input label={t("password")} type="password" placeholder={t("passwordPlaceholder")} value={form.password} onChange={e => set("password", e.target.value)} error={errors.password} />
-          </div>
-          {errors.location && <div className="form-error">{t("fillRequired")}</div>}
-        </div>
+        {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
 
+        {/* ── SECTION 1: Personal Details ── */}
         <div className="card">
-          <div className="card-title">{t("workDetails")}</div>
+          <div style={SECTION_TITLE_STYLE}>👤 Personal Details</div>
+
+          {/* Full Name */}
+          <Input
+            label="Full Name *"
+            placeholder="e.g. Raju Pradhan"
+            value={form.name}
+            onChange={e => set("name", e.target.value)}
+            error={errors.name}
+          />
+
+          {/* Date of Birth */}
           <div className="form-group">
-            <label className="form-label">{t("yourSkills")}</label>
-            <div className="chip-grid">
-              {SKILL_OPTIONS.map(s => <div key={s} className={`chip${form.skills.includes(s) ? " selected" : ""}`} onClick={() => toggleSkill(s)}>{s}</div>)}
+            <label className="form-label">Date of Birth</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1.5fr", gap: "0.5rem" }}>
+              <select className="form-input" value={form.dobDay} onChange={e => set("dobDay", e.target.value)}>
+                <option value="">Day</option>
+                {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+              <select className="form-input" value={form.dobMonth} onChange={e => set("dobMonth", e.target.value)}>
+                <option value="">Month</option>
+                {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <select className="form-input" value={form.dobYear} onChange={e => set("dobYear", e.target.value)}>
+                <option value="">Year</option>
+                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
             </div>
-          </div>
-          {form.skills.includes("Others") && (
-            <Input label={t("otherSkillLabel")} placeholder={t("otherSkillPlaceholder")} value={form.customSkill} onChange={e => set("customSkill", e.target.value)} />
-          )}
-          <div className="form-row">
-            <Input label={t("experience")} type="number" placeholder={t("experiencePlaceholder")} value={form.experience} onChange={e => set("experience", e.target.value)} hint={t("experienceHint")} />
-            <Input label={t("expectedSalary")} type="number" placeholder={t("expectedSalaryPlaceholder")} value={form.expectedSalary} onChange={e => set("expectedSalary", e.target.value)} />
+            <div className="form-hint">Optional — helps employers know your age</div>
           </div>
 
+          {/* Phone */}
+          <PhoneInput
+            label="Phone Number *"
+            placeholder="10-digit mobile number"
+            value={form.phone}
+            onChange={v => set("phone", v)}
+            error={errors.phone}
+            t={t}
+          />
+
+          {/* Email */}
+          <Input
+            label="Email (Optional)"
+            type="email"
+            placeholder="your@email.com"
+            value={form.email}
+            onChange={e => set("email", e.target.value)}
+          />
+
+          {/* Password */}
+          <Input
+            label="Password *"
+            type="password"
+            placeholder="Min 6 characters"
+            value={form.password}
+            onChange={e => set("password", e.target.value)}
+            error={errors.password}
+          />
+
+          {/* Gender */}
           <div className="form-group">
             <label className="form-label">Gender *</label>
-            <div style={{ display: "flex", gap: "1rem", marginTop: "0.3rem" }}>
-              {["Male", "Female", "Other"].map(g => (
-                <label key={g} style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.88rem", cursor: "pointer" }}>
-                  <input type="radio" name="gender" checked={form.gender === g} onChange={() => set("gender", g)} />
-                  {g}
-                </label>
-              ))}
-            </div>
+            <select
+              className={`form-input${errors.gender ? " error" : ""}`}
+              value={form.gender}
+              onChange={e => set("gender", e.target.value)}
+            >
+              <option value="">-- Select Gender --</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+            {errors.gender && <div className="form-error">{errors.gender}</div>}
           </div>
 
+          {/* Languages */}
           <div className="form-group">
-            <label className="form-label">{t("willingToRelocate")}</label>
-            <div style={{ display: "flex", gap: "1rem", marginTop: "0.3rem" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.88rem", cursor: "pointer" }}><input type="radio" name="relocate" checked={form.willingToRelocate === true} onChange={() => set("willingToRelocate", true)} /> {t("yes")}</label>
-              <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.88rem", cursor: "pointer" }}><input type="radio" name="relocate" checked={form.willingToRelocate === false} onChange={() => set("willingToRelocate", false)} /> {t("no")}</label>
+            <label className="form-label">Languages Known</label>
+            <div className="chip-grid">
+              {LANGUAGES.map(lang => (
+                <div
+                  key={lang}
+                  className={`chip${form.languages.includes(lang) ? " selected" : ""}`}
+                  onClick={() => toggleMulti("languages", lang)}
+                >
+                  {lang}
+                </div>
+              ))}
             </div>
+            <div className="form-hint">Select all languages you can speak</div>
           </div>
-          <Input label={t("aboutYourself")} as="textarea" placeholder={t("aboutPlaceholder")} value={form.about} onChange={e => set("about", e.target.value)} />
+        </div>
+
+        {/* ── SECTION 2: Work Details ── */}
+        <div className="card">
+          <div style={SECTION_TITLE_STYLE}>💼 Work Details</div>
+
+          {/* Primary Skill */}
+          <div className="form-group">
+            <label className="form-label">Primary Skill *</label>
+            <select
+              className={`form-input${errors.skill ? " error" : ""}`}
+              value={form.skill}
+              onChange={e => set("skill", e.target.value)}
+            >
+              <option value="">Select one skill that you know</option>
+              {SKILL_OPTIONS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            {errors.skill && <div className="form-error">{errors.skill}</div>}
+          </div>
+
+          {/* Educational Qualification */}
+          <div className="form-group">
+            <label className="form-label">Educational Qualification</label>
+            <select
+              className="form-input"
+              value={form.qualification}
+              onChange={e => set("qualification", e.target.value)}
+            >
+              <option value="">Select your qualification</option>
+              {QUALIFICATIONS.map(q => <option key={q} value={q}>{q}</option>)}
+            </select>
+          </div>
+
+          {/* Experience */}
+          <div className="form-group">
+            <label className="form-label">Experience (Years)</label>
+            <select
+              className="form-input"
+              value={form.experience}
+              onChange={e => set("experience", e.target.value)}
+            >
+              {EXP_YEARS.map(y => (
+                <option key={y} value={y}>{y === "0" ? "0 — Fresher" : `${y} year${y === "1" ? "" : "s"}`}</option>
+              ))}
+            </select>
+            <div className="form-hint">Select 0 if you have no experience</div>
+          </div>
+
+          {/* Job Types Interested */}
+          <div className="form-group">
+            <label className="form-label">Types of Jobs You're Interested In</label>
+            <div className="chip-grid">
+              {SKILL_OPTIONS_LIST.map(s => (
+                <div
+                  key={s}
+                  className={`chip${form.jobTypes.includes(s) ? " selected" : ""}`}
+                  onClick={() => toggleMulti("jobTypes", s)}
+                >
+                  {s}
+                </div>
+              ))}
+            </div>
+            <div className="form-hint">Select all job types you are open to</div>
+          </div>
+
+          {/* Expected Salary */}
+          <Input
+            label="Expected Salary (₹/month)"
+            type="number"
+            placeholder="e.g. 8000"
+            value={form.expectedSalary}
+            min="0"
+            onChange={e => set("expectedSalary", e.target.value)}
+            hint="What salary do you expect per month?"
+          />
+
+          {/* About */}
+          <Input
+            label="About Yourself"
+            as="textarea"
+            placeholder="Write a few lines about yourself, your work style, etc."
+            value={form.about}
+            onChange={e => set("about", e.target.value)}
+          />
+        </div>
+
+        {/* ── SECTION 3: Location Information ── */}
+        <div className="card">
+          <div style={SECTION_TITLE_STYLE}>📍 Location Information</div>
+
+          {/* State */}
+          <div className="form-group">
+            <label className="form-label">State *</label>
+            <select
+              className={`form-input${errors.state ? " error" : ""}`}
+              value={form.state}
+              onChange={e => { set("state", e.target.value); set("district", ""); }}
+            >
+              {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            {errors.state && <div className="form-error">{errors.state}</div>}
+          </div>
+
+          {/* District */}
+          <div className="form-group">
+            <label className="form-label">District *</label>
+            {form.state === "Odisha" ? (
+              <select
+                className={`form-input${errors.district ? " error" : ""}`}
+                value={form.district}
+                onChange={e => set("district", e.target.value)}
+              >
+                <option value="">-- Select District --</option>
+                {ODISHA_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            ) : (
+              <input
+                className={`form-input${errors.district ? " error" : ""}`}
+                type="text"
+                placeholder="Enter your district"
+                value={form.district}
+                onChange={e => set("district", e.target.value)}
+              />
+            )}
+            {errors.district && <div className="form-error">{errors.district}</div>}
+          </div>
+
+          {/* Taluk */}
+          <Input
+            label="Taluk / Block"
+            placeholder="Enter your taluk or block name"
+            value={form.taluk}
+            onChange={e => set("taluk", e.target.value)}
+            hint="Optional"
+          />
+
+          {/* Pincode */}
+          <div className="form-group">
+            <label className="form-label">Pincode</label>
+            <input
+              className="form-input"
+              type="tel"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="Enter your pincode"
+              value={form.pincode}
+              onChange={e => set("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
+            />
+            <div className="form-hint">Optional — 6-digit area pincode</div>
+          </div>
         </div>
 
         {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
 
-        <button className="btn btn-saffron btn-full" onClick={handleSubmit}>{t("createProfile")}</button>
+        <button className="btn btn-saffron btn-full" onClick={handleSubmit}>
+          {t("createProfile")}
+        </button>
         <div style={{ textAlign: "center", marginTop: "0.75rem", fontSize: "0.83rem", color: "var(--gray-500)" }}>
           {t("alreadyHaveAccount")} <span style={{ color: "var(--saffron)", fontWeight: 700, cursor: "pointer" }} onClick={() => navigate("login")}>{t("loginHere")}</span>
         </div>
