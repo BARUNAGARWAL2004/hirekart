@@ -537,6 +537,17 @@ function useStore() {
       startTime: j.start_time,
       endTime: j.end_time,
       genderPreference: j.gender_preference,
+
+      companyName: j.company_name,
+      clientPhone: j.client_phone,
+      companyLocation: j.company_location,
+      contactPerson: j.contact_person,
+      jobWhatsapp: j.job_whatsapp,
+      jobCity: j.job_city,
+      jobArea: j.job_area,
+      pincode: j.pincode,
+      skills: j.skills || [],
+      qualification: j.qualification,
     }));
 
     setData({ users, jobs, applications: appsRes.data || [] });
@@ -630,23 +641,79 @@ function useStore() {
 
   const postJob = async (form) => {
     const job = {
+
       owner_id: currentUser.id,
+
       title: form.title,
-      shop_name: currentUser.shopName,
-      shop_type: currentUser.shopType,
-      location: currentUser.location,
-      posted_date: new Date().toISOString().slice(0, 10),
-      min_salary: Number(form.minSalary),
-      max_salary: Number(form.maxSalary),
-      experience: Number(form.experience || 0),
+
       description: form.description,
+
+      posted_date: new Date().toISOString().slice(0, 10),
+
       active: true,
-      // ✅ New fields
+
+
+      // shop info (existing)
+      shop_name: currentUser.shopName,
+
+      shop_type: currentUser.shopType,
+
+      location: currentUser.location,
+
+
+      // salary
+      min_salary: Number(form.minSalary),
+
+      max_salary: Number(form.maxSalary),
+
+
+      // hiring details
+      experience: Number(form.experience || 0),
+
       candidates_required: Number(form.candidatesRequired || 1),
-      job_location: form.jobLocation === "Others" ? form.customLocation : form.jobLocation,
+
+
+      // client info
+      company_name: form.companyName,
+
+      client_phone: form.clientPhone,
+
+      company_location: form.companyLocation,
+
+      contact_person: form.contactPerson,
+
+
+      // job contact
+      job_whatsapp: form.jobWhatsapp,
+
+
+      // work location
+      job_city: form.jobCity,
+
+      job_area: form.jobArea,
+
+      pincode: form.pincode,
+
+
+      // skills & qualification
+      skills: form.skills,
+
+      qualification: form.qualification,
+
+
+      // existing fields (do not remove)
+      job_location:
+        form.jobLocation === "Others"
+          ? form.customLocation
+          : form.jobLocation,
+
       start_time: form.startTime || null,
+
       end_time: form.endTime || null,
-      gender_preference: form.genderPreference || "Both can apply",
+
+      gender_preference:
+        form.genderPreference || "Both can apply"
+
     };
 
     const { error } = await supabase.from("jobs").insert([job]);
@@ -2028,17 +2095,44 @@ function PostJobPage({ store }) {
   const GENDER_OPTIONS = ["Male", "Female", "Both can apply"];
 
   const [form, setForm] = useState({
+
+    // Client Info
+    companyName: "",
+    clientPhone: "",
+    companyLocation: "",
+    contactPerson: "",
+
+    // Job Basic
     title: "",
+    description: "",
+
+    // Job Contact
+    jobWhatsapp: "",
+
+    // Work Location
+    jobCity: "",
+    jobArea: "",
+    pincode: "",
+
+    // Skills & Qualification
+    skills: [],
+    qualification: "",
+    experience: "0",
+
+    // Hiring Details
+    candidatesRequired: "1",
+
+    // Salary
     minSalary: "",
     maxSalary: "",
-    experience: "0",
-    description: "",
-    candidatesRequired: "1",
+
+    // Existing fields (DO NOT REMOVE)
     jobLocation: "",
     customLocation: "",
     startTime: "",
     endTime: "",
-    genderPreference: "Both can apply",
+    genderPreference: "Both can apply"
+
   });
 
   const [errors, setErrors] = useState({});
@@ -2049,21 +2143,38 @@ function PostJobPage({ store }) {
 
   const validate = () => {
     const e = {};
-    if (!form.title) e.title = t("fillRequired");
+
+    if (!form.title)
+      e.title = t("fillRequired");
 
     // Salary validation
     if (!form.minSalary || isNaN(form.minSalary) || Number(form.minSalary) < 0)
       e.minSalary = t("fillRequired");
+
     if (!form.maxSalary || isNaN(form.maxSalary) || Number(form.maxSalary) < 0)
       e.maxSalary = t("fillRequired");
-    if (form.minSalary && form.maxSalary && parseInt(form.minSalary) > parseInt(form.maxSalary))
-      e.salary = "⚠️ Min salary cannot be greater than max salary.";
 
-    if (!form.description) e.description = t("fillRequired");
-    if (!form.jobLocation) e.jobLocation = t("fillRequired");
-    if (form.jobLocation === "Others" && !form.customLocation) e.customLocation = t("fillRequired");
+    // salary comparison rule
+    if (
+      form.minSalary &&
+      form.maxSalary &&
+      Number(form.maxSalary) <= Number(form.minSalary)
+    ) {
+      e.salary = "Enter correct salary range";
+    }
+
+    if (!form.description)
+      e.description = t("fillRequired");
+
+    if (!form.jobLocation)
+      e.jobLocation = t("fillRequired");
+
+    if (form.jobLocation === "Others" && !form.customLocation)
+      e.customLocation = t("fillRequired");
+
     if (!form.candidatesRequired || Number(form.candidatesRequired) < 1)
       e.candidatesRequired = "Please enter a valid number.";
+
     return e;
   };
 
@@ -2098,7 +2209,7 @@ function PostJobPage({ store }) {
     </div>
   );
 
-return (
+  return (
     <>
       <div className="page-header page-header-green">
         <h2>{t("postJobTitle")}</h2>
@@ -2137,6 +2248,52 @@ return (
             </div>
             <div style={{ fontSize: "0.72rem", color: "var(--gray-400)", marginTop: "0.6rem" }}>
               ℹ️ This info is taken from your shop profile. To update, edit your profile.
+
+              {/* Company Name */}
+              <Input
+                label="Company Name *"
+                placeholder="Enter company or shop name"
+                value={form.companyName || ""}
+                onChange={e => set("companyName", e.target.value)}
+                error={errors.companyName}
+              />
+
+              {/* Client Contact Number */}
+              <PhoneInput
+                label="Client Contact Number *"
+                placeholder="10-digit contact number"
+                value={form.clientPhone || ""}
+                onChange={v => set("clientPhone", v)}
+                error={errors.clientPhone}
+                t={t}
+              />
+
+              {/* Company Location */}
+              <Input
+                label="Company Location *"
+                placeholder="Enter company location"
+                value={form.companyLocation || ""}
+                onChange={e => set("companyLocation", e.target.value)}
+                error={errors.companyLocation}
+              />
+
+              {/* Email */}
+              <Input
+                label="Email (optional)"
+                type="email"
+                placeholder="company@email.com"
+                value={form.companyEmail || ""}
+                onChange={e => set("companyEmail", e.target.value)}
+              />
+
+              {/* Contact Person Name */}
+              <Input
+                label="Contact Person Name"
+                placeholder="Enter contact person name"
+                value={form.contactPerson || ""}
+                onChange={e => set("contactPerson", e.target.value)}
+              />
+
             </div>
           </div>
 
@@ -2186,6 +2343,258 @@ return (
             onChange={e => set("title", e.target.value)}
             error={errors.title}
           />
+
+          <PhoneInput
+            label="Job Contact WhatsApp Number *"
+            value={form.jobWhatsapp}
+            onChange={v => set("jobWhatsapp", v)}
+            error={errors.jobWhatsapp}
+            t={t}
+          />
+
+          <Input
+            label="Work Location - City *"
+            value={form.jobCity}
+            onChange={e => set("jobCity", e.target.value)}
+            error={errors.jobCity}
+          />
+
+          <Input
+            label="Work Location - Area"
+            value={form.jobArea}
+            onChange={e => set("jobArea", e.target.value)}
+          />
+
+          <Input
+            label="Pincode *"
+            type="number"
+            value={form.pincode}
+            onChange={e => set("pincode", e.target.value.slice(0, 6))}
+            error={errors.pincode}
+          />
+
+          <Input
+            label="Number of candidates required *"
+            type="number"
+            min="1"
+            value={form.candidatesRequired}
+            onChange={e => set("candidatesRequired", e.target.value)}
+            error={errors.candidatesRequired}
+          />
+
+          {/* Job Contact WhatsApp Number */}
+          <PhoneInput
+            label="Job Contact WhatsApp Number *"
+            placeholder="10-digit WhatsApp number"
+            value={form.jobWhatsapp || ""}
+            onChange={v => set("jobWhatsapp", v)}
+            error={errors.jobWhatsapp}
+            t={t}
+          />
+
+          {/* Work Location - City */}
+          <Input
+            label="Work Location - City *"
+            placeholder="Enter city name"
+            value={form.jobCity || ""}
+            onChange={e => set("jobCity", e.target.value)}
+            error={errors.jobCity}
+          />
+
+          {/* Work Location - Area */}
+          <Input
+            label="Work Location - Area"
+            placeholder="Enter area or locality"
+            value={form.jobArea || ""}
+            onChange={e => set("jobArea", e.target.value)}
+          />
+
+          {/* Pincode */}
+          <Input
+            label="Pincode *"
+            type="number"
+            placeholder="6 digit pincode"
+            value={form.pincode || ""}
+            onChange={e => {
+              const val = e.target.value.slice(0, 6);
+              set("pincode", val);
+            }}
+            error={errors.pincode}
+          />
+
+          {/* Number of candidates required */}
+          <Input
+            label="Number of candidates required *"
+            type="number"
+            placeholder="e.g. 2"
+            min="1"
+            value={form.candidatesRequired || "1"}
+            onChange={e => set("candidatesRequired", e.target.value)}
+            error={errors.candidatesRequired}
+          />
+
+          <div className="form-group">
+            <label className="form-label">Skill Required (select up to 3)</label>
+
+            <div className="chip-grid">
+
+              {SKILL_OPTIONS_LIST.map(skill => (
+
+                <div
+                  key={skill}
+                  className={`chip ${form.skills.includes(skill) ? "selected" : ""}`}
+                  onClick={() => {
+
+                    if (form.skills.includes(skill)) {
+
+                      set("skills", form.skills.filter(s => s !== skill))
+
+                    }
+
+                    else if (form.skills.length < 3) {
+
+                      set("skills", [...form.skills, skill])
+
+                    }
+
+                  }}
+                >
+
+                  {skill}
+
+                </div>
+
+              ))}
+
+            </div>
+
+            <div className="form-hint">
+              Select up to 3 skills required for this job
+            </div>
+
+          </div>
+
+          {/* Skill Required */}
+          <div className="form-group">
+            <label className="form-label">Skill Required *</label>
+
+            <div className="chip-grid">
+              {SKILL_OPTIONS_LIST.map(skill => {
+                const selected = (form.skills || []).includes(skill);
+
+                return (
+                  <div
+                    key={skill}
+                    className={`chip ${selected ? "selected" : ""}`}
+                    onClick={() => {
+                      const current = form.skills || [];
+
+                      if (selected) {
+                        set(
+                          "skills",
+                          current.filter(s => s !== skill)
+                        );
+                      } else if (current.length < 3) {
+                        set(
+                          "skills",
+                          [...current, skill]
+                        );
+                      }
+                    }}
+                  >
+                    {skill}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="form-hint">
+              Select up to 3 skills required for this job
+            </div>
+
+            <Select
+              label="Preferred Educational Qualification"
+              options={QUALIFICATIONS}
+              value={form.qualification}
+              onChange={e => set("qualification", e.target.value)}
+            />
+
+            <Select
+              label="Experience in Years"
+              options={EXP_YEARS}
+              value={form.experience}
+              onChange={e => set("experience", e.target.value)}
+            />
+
+            {errors.skills && (
+              <div className="form-error">
+                {errors.skills}
+              </div>
+            )}
+          </div>
+
+
+          {/* Preferred Educational Qualification */}
+          <div className="form-group">
+            <label className="form-label">
+              Preferred Educational Qualification *
+            </label>
+
+            <select
+              className="form-input"
+              value={form.qualification || ""}
+              onChange={e => set("qualification", e.target.value)}
+            >
+              <option value="">
+                Select qualification
+              </option>
+
+              {QUALIFICATIONS.map(q => (
+                <option key={q} value={q}>
+                  {q}
+                </option>
+              ))}
+            </select>
+
+            {errors.qualification && (
+              <div className="form-error">
+                {errors.qualification}
+              </div>
+            )}
+          </div>
+
+
+          {/* Experience in Years */}
+          <div className="form-group">
+            <label className="form-label">
+              Experience in Years *
+            </label>
+
+            <select
+              className="form-input"
+              value={form.experience || "0"}
+              onChange={e => set("experience", e.target.value)}
+            >
+              {EXP_YEARS.map(year => (
+                <option key={year} value={year}>
+                  {year === "0"
+                    ? "0 — Fresher"
+                    : `${year} year${year === "1" ? "" : "s"}`
+                  }
+                </option>
+              ))}
+            </select>
+
+            <div className="form-hint">
+              Default is 0 (Fresher)
+            </div>
+
+            {errors.experience && (
+              <div className="form-error">
+                {errors.experience}
+              </div>
+            )}
+          </div>
 
           {/* Salary */}
           <div className="form-row">
