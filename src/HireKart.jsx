@@ -2098,7 +2098,7 @@ function PostJobPage({ store }) {
     </div>
   );
 
-  return (
+return (
     <>
       <div className="page-header page-header-green">
         <h2>{t("postJobTitle")}</h2>
@@ -2107,10 +2107,78 @@ function PostJobPage({ store }) {
       <div className="section">
         {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
 
-        {/* ── Basic Job Details ── */}
+        {/* ── CARD 1: Client Info ── */}
         <div className="card">
-          <div className="card-title">{t("jobDetailsSection")}</div>
+          <div style={{
+            fontFamily: "'Baloo 2', cursive",
+            fontSize: "1.05rem",
+            fontWeight: 800,
+            color: "#0B3C5D",
+            marginBottom: "1rem",
+            paddingBottom: "0.4rem",
+            borderBottom: "2px solid var(--saffron-pale)",
+          }}>🏪 Client Info</div>
 
+          {/* Shop name and location pulled from profile — read only display */}
+          <div style={{ background: "var(--gray-50)", borderRadius: "var(--radius-sm)", padding: "0.9rem", marginBottom: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", fontSize: "0.84rem" }}>
+              <div>
+                <div style={{ fontSize: "0.72rem", color: "var(--gray-500)", fontWeight: 600, marginBottom: "0.2rem" }}>SHOP NAME</div>
+                <div style={{ fontWeight: 700, color: "var(--navy)" }}>{currentUser?.shopName || "—"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: "0.72rem", color: "var(--gray-500)", fontWeight: 600, marginBottom: "0.2rem" }}>SHOP TYPE</div>
+                <div style={{ fontWeight: 700, color: "var(--navy)" }}>{currentUser?.shopType || "—"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: "0.72rem", color: "var(--gray-500)", fontWeight: 600, marginBottom: "0.2rem" }}>CITY</div>
+                <div style={{ fontWeight: 700, color: "var(--navy)" }}>{currentUser?.location || "—"}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: "0.72rem", color: "var(--gray-400)", marginTop: "0.6rem" }}>
+              ℹ️ This info is taken from your shop profile. To update, edit your profile.
+            </div>
+          </div>
+
+          {/* Job Location */}
+          <div className="form-group">
+            <label className="form-label">Job Location *</label>
+            <select
+              className={`form-input${errors.jobLocation ? " error" : ""}`}
+              value={form.jobLocation}
+              onChange={e => set("jobLocation", e.target.value)}
+            >
+              <option value="">-- Select City --</option>
+              {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+            {errors.jobLocation && <div className="form-error">{errors.jobLocation}</div>}
+            <div className="form-hint">Where will the worker need to come?</div>
+          </div>
+
+          {form.jobLocation === "Others" && (
+            <Input
+              label="Enter City Name *"
+              placeholder="Type the city or area name"
+              value={form.customLocation}
+              onChange={e => set("customLocation", e.target.value)}
+              error={errors.customLocation}
+            />
+          )}
+        </div>
+
+        {/* ── CARD 2: Job Info ── */}
+        <div className="card">
+          <div style={{
+            fontFamily: "'Baloo 2', cursive",
+            fontSize: "1.05rem",
+            fontWeight: 800,
+            color: "#0B3C5D",
+            marginBottom: "1rem",
+            paddingBottom: "0.4rem",
+            borderBottom: "2px solid var(--saffron-pale)",
+          }}>📋 Job Info</div>
+
+          {/* Job Title */}
           <Input
             label={t("jobTitle")}
             placeholder={t("jobTitlePlaceholder")}
@@ -2119,6 +2187,7 @@ function PostJobPage({ store }) {
             error={errors.title}
           />
 
+          {/* Salary */}
           <div className="form-row">
             <Input
               label={t("minSalary")}
@@ -2153,6 +2222,7 @@ function PostJobPage({ store }) {
             </div>
           )}
 
+          {/* Experience + Candidates */}
           <div className="form-row">
             <Input
               label={t("expRequired")}
@@ -2166,60 +2236,19 @@ function PostJobPage({ store }) {
               }}
               hint="Enter 0 to welcome freshers"
             />
-            {/* ✅ Candidates Required */}
             <Input
               label="Candidates Required *"
               type="number"
               placeholder="e.g. 2"
               value={form.candidatesRequired}
+              min="1"
               onChange={e => set("candidatesRequired", e.target.value)}
               error={errors.candidatesRequired}
-              hint="How many people do you want to hire?"
+              hint="How many people to hire?"
             />
           </div>
 
-          <Input
-            label={t("jobDescLabel")}
-            as="textarea"
-            value={form.description}
-            onChange={e => set("description", e.target.value)}
-          />
-
-          {/* Job Timing */}
-          {/* <div className="form-row"> */}
-
-
-        </div>
-
-        {/* ── Location & Schedule ── */}
-        <div className="card">
-          <div className="card-title">📍 Location & Schedule</div>
-
-          {/* ✅ Job Location Dropdown */}
-          <div className="form-group">
-            <label className="form-label">Job Location *</label>
-            <select
-              className={`form-input${errors.jobLocation ? " error" : ""}`}
-              value={form.jobLocation}
-              onChange={e => set("jobLocation", e.target.value)}
-            >
-              <option value="">-- Select City --</option>
-              {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
-            </select>
-            {errors.jobLocation && <div className="form-error">{errors.jobLocation}</div>}
-          </div>
-
-          {/* ✅ Custom Location — shown only when "Others" is selected */}
-          {form.jobLocation === "Others" && (
-            <Input
-              label="Enter City Name *"
-              placeholder="Type the city or area name"
-              value={form.customLocation}
-              onChange={e => set("customLocation", e.target.value)}
-              error={errors.customLocation}
-            />
-          )}
-
+          {/* Timings */}
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Start Time</label>
@@ -2227,7 +2256,7 @@ function PostJobPage({ store }) {
                 <option value="">-- Select Time --</option>
                 {TIME_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
-              <div className="form-hint">Work starts at what time?</div>
+              <div className="form-hint">Work starts at?</div>
             </div>
             <div className="form-group">
               <label className="form-label">End Time</label>
@@ -2235,11 +2264,11 @@ function PostJobPage({ store }) {
                 <option value="">-- Select Time --</option>
                 {TIME_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
-              <div className="form-hint">Work ends at what time?</div>
+              <div className="form-hint">Work ends at?</div>
             </div>
           </div>
 
-          {/* ✅ Gender Preference */}
+          {/* Gender Preference */}
           <div className="form-group">
             <label className="form-label">Gender Preference</label>
             <select
@@ -2251,10 +2280,16 @@ function PostJobPage({ store }) {
             </select>
             <div className="form-hint">Who can apply for this job?</div>
           </div>
-        </div>
 
-        <div className="alert alert-info">
-          {t("locationNote")} <strong>{currentUser?.shopName}, {currentUser?.location}</strong>
+          {/* Job Description */}
+          <Input
+            label={t("jobDescLabel")}
+            as="textarea"
+            placeholder={t("jobDescPlaceholder")}
+            value={form.description}
+            onChange={e => set("description", e.target.value)}
+            error={errors.description}
+          />
         </div>
 
         <button
