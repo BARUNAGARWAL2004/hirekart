@@ -2344,44 +2344,6 @@ function PostJobPage({ store }) {
             error={errors.title}
           />
 
-          <PhoneInput
-            label="Job Contact WhatsApp Number *"
-            value={form.jobWhatsapp}
-            onChange={v => set("jobWhatsapp", v)}
-            error={errors.jobWhatsapp}
-            t={t}
-          />
-
-          <Input
-            label="Work Location - City *"
-            value={form.jobCity}
-            onChange={e => set("jobCity", e.target.value)}
-            error={errors.jobCity}
-          />
-
-          <Input
-            label="Work Location - Area"
-            value={form.jobArea}
-            onChange={e => set("jobArea", e.target.value)}
-          />
-
-          <Input
-            label="Pincode *"
-            type="number"
-            value={form.pincode}
-            onChange={e => set("pincode", e.target.value.slice(0, 6))}
-            error={errors.pincode}
-          />
-
-          <Input
-            label="Number of candidates required *"
-            type="number"
-            min="1"
-            value={form.candidatesRequired}
-            onChange={e => set("candidatesRequired", e.target.value)}
-            error={errors.candidatesRequired}
-          />
-
           {/* Job Contact WhatsApp Number */}
           <PhoneInput
             label="Job Contact WhatsApp Number *"
@@ -2403,7 +2365,7 @@ function PostJobPage({ store }) {
 
           {/* Work Location - Area */}
           <Input
-            label="Work Location - Area"
+            label="Work Location - Complete address"
             placeholder="Enter area or locality"
             value={form.jobArea || ""}
             onChange={e => set("jobArea", e.target.value)}
