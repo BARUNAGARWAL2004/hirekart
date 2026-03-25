@@ -1283,6 +1283,9 @@ const SKILL_OPTIONS_LIST = ["Sales", "Helper", "Delivery", "Electrician", "Plumb
 
 const QUALIFICATIONS = ["PG Degree (M.A, M.Com, M.Sc, etc.)", "Professional Degree (B.E, M.E, MBA, MBBS, etc.)", "UG Degree (B.A, B.Com, B.Sc, etc.)", "Diploma", "ITI", "12th and below", "10th and below"];
 
+const JobQUALIFICATIONS = ["No Degree Required","PG Degree (M.A, M.Com, M.Sc, etc.)", "Professional Degree (B.E, M.E, MBA, MBBS, etc.)", "UG Degree (B.A, B.Com, B.Sc, etc.)", "Diploma", "ITI", "12th and below", "10th and below"];
+
+
 const EXP_YEARS = Array.from({ length: 21 }, (_, i) => String(i));
 
 const ODISHA_DISTRICTS = ["Angul", "Dhenkanal", "Cuttack", "Khordha", "Puri", "Jagatsinghpur", "Kendrapara", "Jajpur", "Bhadrak", "Balasore", "Mayurbhanj", "Keonjhar", "Sundargarh", "Sambalpur", "Bargarh", "Jharsuguda", "Balangir", "Subarnapur", "Kalahandi", "Nabarangpur", "Rayagada", "Koraput", "Malkangiri", "Ganjam", "Gajapati", "Kandhamal", "Boudh", "Nayagarh", "Deogarh"];
@@ -2452,7 +2455,7 @@ function PostJobPage({ store }) {
                 Select qualification
               </option>
 
-              {QUALIFICATIONS.map(q => (
+              {JobQUALIFICATIONS.map(q => (
                 <option key={q} value={q}>
                   {q}
                 </option>
