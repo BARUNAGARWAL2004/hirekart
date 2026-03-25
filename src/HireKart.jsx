@@ -2434,7 +2434,7 @@ function PostJobPage({ store }) {
           />
 
           <div className="form-group">
-            <label className="form-label">Skill Required (select up to 3)</label>
+            <label className="form-label">Skill Required (select up to 3)*</label>
 
             <div className="chip-grid">
 
@@ -2472,65 +2472,6 @@ function PostJobPage({ store }) {
               Select up to 3 skills required for this job
             </div>
 
-          </div>
-
-          {/* Skill Required */}
-          <div className="form-group">
-            <label className="form-label">Skill Required *</label>
-
-            <div className="chip-grid">
-              {SKILL_OPTIONS_LIST.map(skill => {
-                const selected = (form.skills || []).includes(skill);
-
-                return (
-                  <div
-                    key={skill}
-                    className={`chip ${selected ? "selected" : ""}`}
-                    onClick={() => {
-                      const current = form.skills || [];
-
-                      if (selected) {
-                        set(
-                          "skills",
-                          current.filter(s => s !== skill)
-                        );
-                      } else if (current.length < 3) {
-                        set(
-                          "skills",
-                          [...current, skill]
-                        );
-                      }
-                    }}
-                  >
-                    {skill}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="form-hint">
-              Select up to 3 skills required for this job
-            </div>
-
-            <Select
-              label="Preferred Educational Qualification"
-              options={QUALIFICATIONS}
-              value={form.qualification}
-              onChange={e => set("qualification", e.target.value)}
-            />
-
-            <Select
-              label="Experience in Years"
-              options={EXP_YEARS}
-              value={form.experience}
-              onChange={e => set("experience", e.target.value)}
-            />
-
-            {errors.skills && (
-              <div className="form-error">
-                {errors.skills}
-              </div>
-            )}
           </div>
 
 
@@ -2633,18 +2574,6 @@ function PostJobPage({ store }) {
 
           {/* Experience + Candidates */}
           <div className="form-row">
-            <Input
-              label={t("expRequired")}
-              type="number"
-              placeholder="0"
-              value={form.experience}
-              min="0"
-              onChange={e => {
-                const val = e.target.value;
-                if (val === "" || Number(val) >= 0) set("experience", val);
-              }}
-              hint="Enter 0 to welcome freshers"
-            />
             <Input
               label="Candidates Required *"
               type="number"
