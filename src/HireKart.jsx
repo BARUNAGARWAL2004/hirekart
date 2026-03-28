@@ -603,8 +603,8 @@ function useStore() {
       .single();
 
     if (error) {
-      console.error(error);
-      return { error: "Registration failed. Please try again." };
+      console.error("Supabase Worker Insert Error:", error);
+      return { error: error.message };
     }
 
     await fetchData();
@@ -1283,7 +1283,7 @@ const SKILL_OPTIONS_LIST = ["Sales", "Helper", "Delivery", "Electrician", "Plumb
 
 const QUALIFICATIONS = ["PG Degree (M.A, M.Com, M.Sc, etc.)", "Professional Degree (B.E, M.E, MBA, MBBS, etc.)", "UG Degree (B.A, B.Com, B.Sc, etc.)", "Diploma", "ITI", "12th and below", "10th and below"];
 
-const JobQUALIFICATIONS = ["No Degree Required","PG Degree (M.A, M.Com, M.Sc, etc.)", "Professional Degree (B.E, M.E, MBA, MBBS, etc.)", "UG Degree (B.A, B.Com, B.Sc, etc.)", "Diploma", "ITI", "12th and below", "10th and below"];
+const JobQUALIFICATIONS = ["No Degree Required", "PG Degree (M.A, M.Com, M.Sc, etc.)", "Professional Degree (B.E, M.E, MBA, MBBS, etc.)", "UG Degree (B.A, B.Com, B.Sc, etc.)", "Diploma", "ITI", "12th and below", "10th and below"];
 
 
 const EXP_YEARS = Array.from({ length: 21 }, (_, i) => String(i));
